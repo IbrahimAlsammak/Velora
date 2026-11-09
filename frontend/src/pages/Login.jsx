@@ -8,7 +8,7 @@ export default function Login() {
   const { user, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const goTo = location.state?.from ?? '/account' // go back where they came from (e.g. checkout)
+  const goTo = location.state?.from ?? '/' // home page - or back where they came from (e.g. checkout)
 
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')

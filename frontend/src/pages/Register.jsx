@@ -8,7 +8,7 @@ export default function Register() {
   const { user, register } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const goTo = location.state?.from ?? '/account'
+  const goTo = location.state?.from ?? '/' // home page - or back where they came from (e.g. checkout)
 
   const [form, setForm] = useState({ fullName: '', phone: '', password: '', confirm: '' })
   const [fieldErrors, setFieldErrors] = useState({})

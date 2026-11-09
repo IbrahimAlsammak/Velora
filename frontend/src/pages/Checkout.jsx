@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { getDelivery } from '../api/catalog.js'
+import CityPicker from '../components/CityPicker.jsx'
 import { placeOrder } from '../api/orders.js'
 import { useAuth } from '../context/useAuth.js'
 import { useCart } from '../context/useCart.js'
@@ -13,7 +14,6 @@ const EMPTY_FORM = {
   customerName: '',
   phone: '',
   city: '',
-  cityChoice: '', // a city id from the store's delivery list, or "other"
   addressLine: '',
   building: '',
   floor: '',
@@ -42,19 +42,12 @@ export default function Checkout() {
 
   // ----- Delivery price (shown here; the backend calculates the real one) -----
   const cities = delivery?.cities ?? []
-  const chosenCity = cities.find((c) => String(c.id) === form.cityChoice)
-  const typesOwnCity = cities.length === 0 || form.cityChoice === 'other'
+  const typed = form.city.trim().toLowerCase()
+  const chosenCity = cities.find((c) => c.name.toLowerCase() === typed) // undefined = a city that's not in the list
   const otherFee = Number(delivery?.otherCitiesFee ?? 0)
   const freeOver = delivery?.freeDeliveryOver != null ? Number(delivery.freeDeliveryOver) : null
   const isFree = freeOver != null && subtotal >= freeOver
-  const cityPicked = chosenCity || (typesOwnCity && form.cityChoice === 'other') || (cities.length === 0 && form.city)
-  const deliveryFee = !cityPicked ? null : isFree ? 0 : chosenCity ? Number(chosenCity.fee) : otherFee
-
-  const chooseCity = (e) => {
-    const value = e.target.value
-    const city = cities.find((c) => String(c.id) === value)
-    setForm({ ...form, cityChoice: value, city: city ? city.name : '' })
-  }
+  const deliveryFee = !typed ? null : isFree ? 0 : chosenCity ? Number(chosenCity.fee) : otherFee
 
   async function handleSubmit(e) {
     e.preventDefault() // stop the browser reloading the page
@@ -63,9 +56,8 @@ export default function Checkout() {
     setFieldErrors({})
     try {
       // Only IDs, options and quantities are sent - the backend works out the prices itself
-      const { cityChoice: _cityChoice, ...details } = form // cityChoice is only for this page
       const order = await placeOrder({
-        ...details,
+        ...form,
         cityId: chosenCity ? chosenCity.id : null, // null = "other city" -> the "other cities" price
         items: items.map((i) => ({ productId: i.productId, color: i.color, size: i.size, quantity: i.quantity })),
       })
@@ -109,30 +101,10 @@ export default function Checkout() {
             {freeOver != null && <> Free delivery on orders of {formatPrice(freeOver)} or more.</>}
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {/* City: from the store's list (each with its delivery price), or typed in */}
-            {cities.length > 0 && (
-              <label className="block">
-                <span className="text-sm uppercase tracking-wider">City / town</span>
-                <select value={form.cityChoice} onChange={chooseCity}
-                  className={`mt-1 w-full rounded-xl border bg-white/70 px-4 py-3 outline-none focus:border-gold ${
-                    fieldErrors.city && !form.cityChoice ? 'border-red-400' : 'border-gold-light'
-                  }`}>
-                  <option value="">— choose your city —</option>
-                  {cities.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name} · delivery {formatPrice(c.fee)}</option>
-                  ))}
-                  <option value="other">Other city / town · delivery {formatPrice(otherFee)}</option>
-                </select>
-              </label>
-            )}
-            {typesOwnCity && (
-              <Field label={cities.length > 0 ? 'Your city / town' : 'City / town'} placeholder="e.g. Jounieh"
-                value={form.city} onChange={update('city')} error={fieldErrors.city} autoComplete="address-level2" />
-            )}
-            {!typesOwnCity && fieldErrors.city && !form.cityChoice && (
-              <span className="text-sm text-red-700">{fieldErrors.city}</span>
-            )}
-            <Field label="Street / neighbourhood" value={form.addressLine} onChange={update('addressLine')} error={fieldErrors.addressLine} autoComplete="address-line1" className="sm:col-span-2" />
+            {/* City: type to search the store's list - each city shows its delivery price */}
+            <CityPicker cities={cities} otherFee={otherFee} value={form.city} error={fieldErrors.city}
+              onChange={(city) => setForm({ ...form, city })} className="sm:col-span-2" />
+            <Field label="Street" value={form.addressLine} onChange={update('addressLine')} error={fieldErrors.addressLine} autoComplete="address-line1" className="sm:col-span-2" />
             <Field label="Building (optional)" placeholder="Name or number" value={form.building} onChange={update('building')} error={fieldErrors.building} />
             <Field label="Floor (optional)" placeholder="e.g. 3rd floor" value={form.floor} onChange={update('floor')} error={fieldErrors.floor} />
             <Field label="Nearby landmark (optional)" placeholder="e.g. next to Spinneys" value={form.landmark} onChange={update('landmark')} error={fieldErrors.landmark} className="sm:col-span-2" />

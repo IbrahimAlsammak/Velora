@@ -15,7 +15,11 @@ import AdminOrders from './pages/admin/Orders.jsx'
 import AdminProductForm from './pages/admin/ProductForm.jsx'
 import AdminProducts from './pages/admin/Products.jsx'
 import Reports from './pages/admin/Reports.jsx'
-import Account from './pages/Account.jsx'
+import AccountLayout from './pages/account/AccountLayout.jsx'
+import MyOrders from './pages/account/MyOrders.jsx'
+import Overview from './pages/account/Overview.jsx'
+import PasswordSecurity from './pages/account/PasswordSecurity.jsx'
+import PersonalInfo from './pages/account/PersonalInfo.jsx'
 import Cart from './pages/Cart.jsx'
 import Checkout from './pages/Checkout.jsx'
 import Contact from './pages/Contact.jsx'
@@ -45,7 +49,13 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/account" element={<Account />} />
+          {/* My account: one page per section */}
+          <Route path="/account" element={<AccountLayout />}>
+            <Route index element={<Overview />} />
+            <Route path="orders" element={<MyOrders />} />
+            <Route path="details" element={<PersonalInfo />} />
+            <Route path="password" element={<PasswordSecurity />} />
+          </Route>
           <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<NotFound />} />
         </Route>
