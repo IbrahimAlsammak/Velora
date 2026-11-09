@@ -25,5 +25,13 @@ public class SchemaUpdates implements CommandLineRunner {
         // Customers now use their phone number - email became optional
         jdbc.execute("ALTER TABLE users MODIFY email VARCHAR(160) NULL");
         jdbc.execute("ALTER TABLE orders MODIFY email VARCHAR(160) NULL");
+
+        // Delivery now works by city only - remove the old "area" column from the city list (keeps the cities)
+        try {
+            jdbc.execute("ALTER TABLE delivery_city_fees DROP COLUMN region");
+        } catch (Exception alreadyRemoved) {
+            // nothing to do
+        }
+        jdbc.execute("DROP TABLE IF EXISTS delivery_region_fees");
     }
 }

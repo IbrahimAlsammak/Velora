@@ -20,7 +20,7 @@ import jakarta.validation.Valid;
 
 /**
  *   GET    /api/delivery                     -> prices for checkout (public)
- *   PUT    /api/admin/delivery               -> save area prices + free-delivery amount (admin)
+ *   PUT    /api/admin/delivery               -> save the "other cities" price + free-delivery amount (admin)
  *   POST   /api/admin/delivery/cities        -> add a city with its own price (admin)
  *   PUT    /api/admin/delivery/cities/{id}   -> edit a city (admin)
  *   DELETE /api/admin/delivery/cities/{id}   -> remove a city (admin)

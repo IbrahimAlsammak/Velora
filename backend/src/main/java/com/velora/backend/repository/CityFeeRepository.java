@@ -5,12 +5,11 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.velora.backend.entity.CityFee;
-import com.velora.backend.entity.Region;
 
-/** Cities with their own delivery price. */
+/** Cities with their delivery price. */
 public interface CityFeeRepository extends JpaRepository<CityFee, Long> {
 
-    List<CityFee> findAllByOrderByRegionAscNameAsc();
+    List<CityFee> findAllByOrderByNameAsc();
 
-    boolean existsByRegionAndNameIgnoreCase(Region region, String name);
+    boolean existsByNameIgnoreCase(String name);
 }

@@ -104,8 +104,8 @@ public class OrderService {
         }
 
         order.setSubtotal(subtotal);
-        // Delivery price: the city's own price, or the area's default; free above the store's limit
-        Quote delivery = deliveryService.quote(request.region(), request.cityId(), subtotal);
+        // Delivery price: the city's price, or the "other cities" price; free above the store's limit
+        Quote delivery = deliveryService.quote(request.cityId(), subtotal);
         if (delivery.cityName() != null) {
             order.setCity(delivery.cityName()); // the exact name from the store's list
         }

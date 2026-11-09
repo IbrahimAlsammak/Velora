@@ -6,96 +6,42 @@ import { inputClass } from '../../components/admin/styles.js'
 import { Button, Card, ErrorBox, Loading, PageHeader } from '../../components/admin/ui.jsx'
 import useLoad from '../../hooks/useLoad.js'
 import formatPrice from '../../utils/formatPrice.js'
-import { REGIONS, regionLabel } from '../../utils/regions.js'
 
 /**
- * Delivery prices:
- *  1. a default price for each AREA
- *  2. optional CITIES with their own price (they win over the area's price)
- *  3. optional free delivery above an amount
+ * Delivery prices by CITY:
+ *  - a list of cities, each with its own price (customers choose from it at checkout)
+ *  - one price for any other city
+ *  - optional free delivery above an amount
  */
 export default function Delivery() {
   const { data, error, loading, reload } = useLoad(getDelivery)
 
   return (
     <>
-      <PageHeader title="Delivery fees"
-        subtitle="Customers pay the price of their city if it's in your list, otherwise their area's price" />
+      <PageHeader title="Delivery fees" subtitle="Customers choose their city at checkout and pay its delivery price" />
       <ErrorBox message={error} />
       {loading && !data && <Loading />}
       {data && (
-        <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
-          {/* key = refresh the form after saving */}
-          <AreaPrices key={JSON.stringify(data.regions) + data.freeDeliveryOver} info={data} onSaved={reload} />
+        <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
           <CityPrices info={data} onChanged={reload} />
+          {/* key = refresh the form after saving */}
+          <OtherSettings key={`${data.otherCitiesFee}|${data.freeDeliveryOver}`} info={data} onSaved={reload} />
         </div>
       )}
     </>
   )
 }
 
-/** Part 1 + 3: one price per area, and "free delivery over $X". */
-function AreaPrices({ info, onSaved }) {
-  const [fees, setFees] = useState(() => Object.fromEntries(info.regions.map((r) => [r.region, String(r.fee)])))
-  const [freeOver, setFreeOver] = useState(info.freeDeliveryOver != null ? String(info.freeDeliveryOver) : '')
-  const [message, setMessage] = useState(null)
-  const [busy, setBusy] = useState(false)
-
-  async function handleSave(e) {
-    e.preventDefault()
-    setBusy(true)
-    setMessage(null)
-    try {
-      await updateDelivery(
-        Object.keys(REGIONS).map((region) => ({ region, fee: Number(fees[region] || 0) })),
-        freeOver === '' ? null : Number(freeOver),
-      )
-      setMessage({ ok: true, text: '✓ Saved. New orders use these prices.' })
-      onSaved()
-    } catch (err) {
-      setMessage({ ok: false, text: errorMessage(err) })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <Card className="h-fit">
-      <h2 className="font-display text-2xl">Area prices</h2>
-      <p className="text-xs text-mulberry/60">Used for any city that isn&apos;t in your city list.</p>
-      <form onSubmit={handleSave} className="mt-4 space-y-2">
-        {Object.entries(REGIONS).map(([key, label]) => (
-          <label key={key} className="flex items-center justify-between gap-3">
-            <span className="text-sm">{label}</span>
-            <MoneyInput value={fees[key] ?? '0'} onChange={(v) => setFees({ ...fees, [key]: v })} />
-          </label>
-        ))}
-
-        <div className="mt-5 border-t border-gold-light pt-4">
-          <label className="flex items-center justify-between gap-3">
-            <span className="text-sm">
-              Free delivery on orders of
-              <span className="block text-xs text-mulberry/50">leave empty = never free</span>
-            </span>
-            <MoneyInput value={freeOver} onChange={setFreeOver} placeholder="e.g. 100" />
-          </label>
-        </div>
-
-        {message && <p className={`text-sm ${message.ok ? 'text-green-800' : 'text-red-700'}`}>{message.text}</p>}
-        <Button type="submit" disabled={busy} className="mt-2 w-full">{busy ? 'Saving…' : 'Save area prices'}</Button>
-      </form>
-    </Card>
-  )
-}
-
-/** Part 2: cities with their own price. */
+/** The list of cities with their price: add, edit, remove. */
 function CityPrices({ info, onChanged }) {
   const [editingId, setEditingId] = useState(null) // a city id, or 'new'
+  const [search, setSearch] = useState('')
   const [actionError, setActionError] = useState(null)
-  const areaFee = (region) => info.regions.find((r) => r.region === region)?.fee ?? 0
+
+  const shown = info.cities.filter((c) => c.name.toLowerCase().includes(search.trim().toLowerCase()))
 
   async function handleDelete(city) {
-    if (!window.confirm(`Remove ${city.name} from the list? It will then use the ${regionLabel(city.region)} price.`)) return
+    if (!window.confirm(`Remove ${city.name}? Customers from there will pay the "other cities" price.`)) return
     setActionError(null)
     try {
       await deleteDeliveryCity(city.id)
@@ -109,55 +55,49 @@ function CityPrices({ info, onChanged }) {
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-2xl">City prices</h2>
-          <p className="text-xs text-mulberry/60">Customers choose these cities from a list at checkout.</p>
+          <h2 className="font-display text-2xl">Cities</h2>
+          <p className="text-xs text-mulberry/60">{info.cities.length} cities · shown in a list at checkout</p>
         </div>
         <Button onClick={() => setEditingId('new')}>+ Add city</Button>
       </div>
 
-      <ErrorBox message={actionError} />
       {editingId === 'new' && (
         <CityForm onDone={() => { setEditingId(null); onChanged() }} onCancel={() => setEditingId(null)} />
       )}
+      <ErrorBox message={actionError} />
 
-      {Object.entries(REGIONS).map(([region, label]) => {
-        const cities = info.cities.filter((c) => c.region === region)
-        return (
-          <div key={region} className="mt-5">
-            <h3 className="flex items-baseline justify-between border-b border-gold-light/70 pb-1 text-sm font-medium">
-              {label}
-              <span className="text-xs font-normal text-mulberry/50">other cities: {formatPrice(areaFee(region))}</span>
-            </h3>
-            {cities.length === 0 ? (
-              <p className="py-2 text-xs text-mulberry/40">No cities with their own price.</p>
-            ) : (
-              <ul className="divide-y divide-gold-light/40">
-                {cities.map((c) => (
-                  <li key={c.id} className="py-2">
-                    {editingId === c.id ? (
-                      <CityForm city={c} onDone={() => { setEditingId(null); onChanged() }} onCancel={() => setEditingId(null)} />
-                    ) : (
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="flex-1">{c.name}</span>
-                        <span className="w-20 text-right font-medium">{formatPrice(c.fee)}</span>
-                        <button type="button" onClick={() => setEditingId(c.id)} className="text-gold hover:underline">Edit</button>
-                        <button type="button" onClick={() => handleDelete(c)} className="text-mulberry/50 hover:text-red-700">Remove</button>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )
-      })}
+      {info.cities.length > 5 && (
+        <input type="search" placeholder="Search cities…" value={search} onChange={(e) => setSearch(e.target.value)}
+          className={`mt-4 max-w-xs ${inputClass}`} />
+      )}
+
+      {info.cities.length === 0 ? (
+        <p className="mt-6 text-sm text-mulberry/60">No cities yet. Click <b>+ Add city</b> to add your first one.</p>
+      ) : (
+        <ul className="mt-4 divide-y divide-gold-light/50 border-t border-gold-light/50">
+          {shown.map((c) => (
+            <li key={c.id} className="py-2.5">
+              {editingId === c.id ? (
+                <CityForm city={c} onDone={() => { setEditingId(null); onChanged() }} onCancel={() => setEditingId(null)} />
+              ) : (
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="flex-1 font-medium">{c.name}</span>
+                  <span className="w-20 text-right">{formatPrice(c.fee)}</span>
+                  <button type="button" onClick={() => setEditingId(c.id)} className="text-gold hover:underline">Edit</button>
+                  <button type="button" onClick={() => handleDelete(c)} className="text-mulberry/50 hover:text-red-700">Delete</button>
+                </div>
+              )}
+            </li>
+          ))}
+          {shown.length === 0 && <li className="py-3 text-sm text-mulberry/60">No city matches.</li>}
+        </ul>
+      )}
     </Card>
   )
 }
 
-/** Add a new city, or edit one. */
+/** Add a new city, or edit one (name + price). */
 function CityForm({ city, onDone, onCancel }) {
-  const [region, setRegion] = useState(city?.region ?? '')
   const [name, setName] = useState(city?.name ?? '')
   const [fee, setFee] = useState(city ? String(city.fee) : '')
   const [error, setError] = useState(null)
@@ -167,7 +107,7 @@ function CityForm({ city, onDone, onCancel }) {
     e.preventDefault()
     setBusy(true)
     setError(null)
-    const body = { region: region || null, name, fee: fee === '' ? null : Number(fee) }
+    const body = { name, fee: fee === '' ? null : Number(fee) }
     try {
       if (city) await updateDeliveryCity(city.id, body)
       else await addDeliveryCity(body)
@@ -181,21 +121,62 @@ function CityForm({ city, onDone, onCancel }) {
 
   return (
     <form onSubmit={handleSave} className="mt-3 rounded-xl border border-gold bg-white p-3">
-      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_110px]">
-        <select className={inputClass} value={region} onChange={(e) => setRegion(e.target.value)}>
-          <option value="">— area —</option>
-          {Object.entries(REGIONS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-        </select>
-        <input className={inputClass} placeholder="City / town, e.g. Jounieh" value={name}
+      <div className="flex flex-wrap gap-2">
+        <input className={`min-w-48 flex-1 ${inputClass}`} placeholder="City / town, e.g. Jounieh" value={name}
           onChange={(e) => setName(e.target.value)} autoFocus />
         <MoneyInput value={fee} onChange={setFee} placeholder="Price" />
-      </div>
-      {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
-      <div className="mt-3 flex gap-2">
         <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save'}</Button>
         <Button variant="secondary" onClick={onCancel}>Cancel</Button>
       </div>
+      {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
     </form>
+  )
+}
+
+/** "Other cities" price + free delivery amount. */
+function OtherSettings({ info, onSaved }) {
+  const [otherFee, setOtherFee] = useState(String(info.otherCitiesFee ?? 0))
+  const [freeOver, setFreeOver] = useState(info.freeDeliveryOver != null ? String(info.freeDeliveryOver) : '')
+  const [message, setMessage] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  async function handleSave(e) {
+    e.preventDefault()
+    setBusy(true)
+    setMessage(null)
+    try {
+      await updateDelivery(Number(otherFee || 0), freeOver === '' ? null : Number(freeOver))
+      setMessage({ ok: true, text: '✓ Saved.' })
+      onSaved()
+    } catch (err) {
+      setMessage({ ok: false, text: errorMessage(err) })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card className="h-fit">
+      <h2 className="font-display text-2xl">Other settings</h2>
+      <form onSubmit={handleSave} className="mt-4 space-y-4">
+        <label className="flex items-center justify-between gap-3">
+          <span className="text-sm">
+            Other cities
+            <span className="block text-xs text-mulberry/50">for any city not in your list</span>
+          </span>
+          <MoneyInput value={otherFee} onChange={setOtherFee} />
+        </label>
+        <label className="flex items-center justify-between gap-3">
+          <span className="text-sm">
+            Free delivery on orders of
+            <span className="block text-xs text-mulberry/50">leave empty = never free</span>
+          </span>
+          <MoneyInput value={freeOver} onChange={setFreeOver} placeholder="e.g. 100" />
+        </label>
+        {message && <p className={`text-sm ${message.ok ? 'text-green-800' : 'text-red-700'}`}>{message.text}</p>}
+        <Button type="submit" disabled={busy} className="w-full">{busy ? 'Saving…' : 'Save'}</Button>
+      </form>
+    </Card>
   )
 }
 

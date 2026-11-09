@@ -23,6 +23,10 @@ public class DeliverySettings {
     @Id
     private Long id = ID;
 
+    /** Price for any city that is NOT in the city list ("Other city"). Empty = $0. */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal otherCitiesFee;
+
     /** Orders of this amount or more get free delivery. Empty = no free delivery. */
     @Column(precision = 10, scale = 2)
     private BigDecimal freeDeliveryOver;

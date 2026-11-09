@@ -1,8 +1,6 @@
 package com.velora.backend.service;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -14,19 +12,15 @@ import com.velora.backend.dto.DeliveryDtos.CityForm;
 import com.velora.backend.dto.DeliveryDtos.DeliveryInfo;
 import com.velora.backend.dto.DeliveryDtos.DeliveryUpdate;
 import com.velora.backend.dto.DeliveryDtos.Quote;
-import com.velora.backend.dto.DeliveryDtos.RegionFeeDto;
 import com.velora.backend.entity.CityFee;
 import com.velora.backend.entity.DeliverySettings;
-import com.velora.backend.entity.Region;
-import com.velora.backend.entity.RegionFee;
 import com.velora.backend.repository.CityFeeRepository;
 import com.velora.backend.repository.DeliverySettingsRepository;
-import com.velora.backend.repository.RegionFeeRepository;
 
 /**
- * Delivery prices:
- *  - every AREA has a default price (not set yet = $0)
- *  - a CITY can have its own price, which wins over the area's
+ * Delivery prices by CITY:
+ *  - each city in the list has its own price
+ *  - any other city pays the "other cities" price
  *  - orders of "freeDeliveryOver" or more are delivered free
  * The price is always calculated HERE, never taken from the customer's browser.
  */
@@ -34,43 +28,38 @@ import com.velora.backend.repository.RegionFeeRepository;
 @Transactional(readOnly = true)
 public class DeliveryService {
 
-    private final RegionFeeRepository regionFees;
     private final CityFeeRepository cityFees;
-    private final DeliverySettingsRepository settings;
+    private final DeliverySettingsRepository settingsRepository;
 
-    public DeliveryService(RegionFeeRepository regionFees, CityFeeRepository cityFees,
-                           DeliverySettingsRepository settings) {
-        this.regionFees = regionFees;
+    public DeliveryService(CityFeeRepository cityFees, DeliverySettingsRepository settingsRepository) {
         this.cityFees = cityFees;
-        this.settings = settings;
+        this.settingsRepository = settingsRepository;
     }
 
     /** For checkout and the admin page. */
     public DeliveryInfo info() {
-        List<RegionFeeDto> regions = Arrays.stream(Region.values())
-                .map(r -> new RegionFeeDto(r, regionFee(r)))
-                .toList();
-        List<CityFeeDto> cities = cityFees.findAllByOrderByRegionAscNameAsc().stream().map(CityFeeDto::from).toList();
-        return new DeliveryInfo(regions, cities, freeOver());
+        DeliverySettings s = settings();
+        return new DeliveryInfo(
+                cityFees.findAllByOrderByNameAsc().stream().map(CityFeeDto::from).toList(),
+                orZero(s.getOtherCitiesFee()),
+                s.getFreeDeliveryOver());
     }
 
     /**
      * The delivery price for an order.
-     * cityId = a city from the store's list (or null for "Other city" -> the area's default price).
+     * cityId = a city from the list, or null for "Other city" (-> the "other cities" price).
      */
-    public Quote quote(Region region, Long cityId, BigDecimal subtotal) {
-        BigDecimal fee = regionFee(region);
+    public Quote quote(Long cityId, BigDecimal subtotal) {
+        DeliverySettings s = settings();
+        BigDecimal fee = orZero(s.getOtherCitiesFee());
         String cityName = null;
         if (cityId != null) {
-            CityFee city = cityFees.findById(cityId)
-                    .filter(c -> c.getRegion() == region)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "Please choose your city again."));
+            CityFee city = cityFees.findById(cityId).orElseThrow(() ->
+                    new ResponseStatusException(HttpStatus.BAD_REQUEST, "Please choose your city again."));
             fee = city.getFee();
             cityName = city.getName();
         }
-        BigDecimal freeOver = freeOver();
-        if (freeOver != null && subtotal.compareTo(freeOver) >= 0) {
+        if (s.getFreeDeliveryOver() != null && subtotal.compareTo(s.getFreeDeliveryOver()) >= 0) {
             fee = BigDecimal.ZERO; // free delivery
         }
         return new Quote(fee, cityName);
@@ -80,21 +69,20 @@ public class DeliveryService {
 
     @Transactional
     public DeliveryInfo update(DeliveryUpdate update) {
-        update.regions().forEach(r -> regionFees.save(new RegionFee(r.region(), r.fee())));
-        DeliverySettings s = settings.findById(DeliverySettings.ID).orElseGet(DeliverySettings::new);
+        DeliverySettings s = settings();
+        s.setOtherCitiesFee(update.otherCitiesFee());
         s.setFreeDeliveryOver(update.freeDeliveryOver());
-        settings.save(s);
+        settingsRepository.save(s);
         return info();
     }
 
     @Transactional
     public CityFeeDto addCity(CityForm form) {
         String name = form.name().trim();
-        if (cityFees.existsByRegionAndNameIgnoreCase(form.region(), name)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, name + " is already in this area's list.");
+        if (cityFees.existsByNameIgnoreCase(name)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, name + " is already in the list.");
         }
         CityFee city = new CityFee();
-        city.setRegion(form.region());
         city.setName(name);
         city.setFee(form.fee());
         return CityFeeDto.from(cityFees.save(city));
@@ -104,8 +92,11 @@ public class DeliveryService {
     public CityFeeDto updateCity(Long id, CityForm form) {
         CityFee city = cityFees.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "City not found"));
-        city.setRegion(form.region());
-        city.setName(form.name().trim());
+        String name = form.name().trim();
+        if (!city.getName().equalsIgnoreCase(name) && cityFees.existsByNameIgnoreCase(name)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, name + " is already in the list.");
+        }
+        city.setName(name);
         city.setFee(form.fee());
         return CityFeeDto.from(city);
     }
@@ -117,11 +108,11 @@ public class DeliveryService {
 
     // ----------------- helpers -----------------
 
-    private BigDecimal regionFee(Region region) {
-        return regionFees.findById(region).map(RegionFee::getFee).orElse(BigDecimal.ZERO);
+    private DeliverySettings settings() {
+        return settingsRepository.findById(DeliverySettings.ID).orElseGet(DeliverySettings::new);
     }
 
-    private BigDecimal freeOver() {
-        return settings.findById(DeliverySettings.ID).map(DeliverySettings::getFreeDeliveryOver).orElse(null);
+    private static BigDecimal orZero(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 }
