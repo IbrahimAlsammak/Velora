@@ -1,6 +1,5 @@
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/useAuth.js'
-import { formatPhone } from '../../utils/phone.js'
 
 // The sections of "My account". Each one has its own address, e.g. /account/orders
 const SECTIONS = [
@@ -29,22 +28,19 @@ export default function AccountLayout() {
   const initials = user.fullName.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10 md:py-14">
-      {/* Header */}
-      <div className="flex items-center gap-4 border-b border-gold-light/60 pb-8">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-mulberry font-display text-2xl text-cream">
-          {initials}
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.25em] text-gold">My account</p>
-          <h1 className="truncate font-display text-3xl font-semibold md:text-4xl">{user.fullName}</h1>
-          <p className="text-sm text-mulberry/60">{user.phone ? formatPhone(user.phone) : user.email}</p>
-        </div>
-      </div>
+    <section className="mx-auto max-w-6xl px-4 py-8 md:py-12">
+      <div className="grid gap-6 md:grid-cols-[240px_1fr] md:gap-12">
+        {/* Left: the customer's name on top, then the menu */}
+        <aside className="md:sticky md:top-6 md:h-fit">
+          <div className="flex items-center gap-3 md:mb-6 md:border-b md:border-gold-light/60 md:pb-6">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-mulberry font-display text-lg text-cream">
+              {initials}
+            </span>
+            <h1 className="truncate font-display text-2xl font-semibold">{user.fullName}</h1>
+          </div>
 
-      <div className="mt-8 grid gap-8 md:grid-cols-[240px_1fr] md:gap-12">
         {/* Menu: a column on computers, a row of tabs on phones */}
-        <nav className="-mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
+        <nav className="-mx-4 mt-4 overflow-x-auto px-4 md:mx-0 md:mt-0 md:overflow-visible md:px-0">
           <ul className="flex gap-2 md:flex-col md:gap-1">
             {SECTIONS.map((s) => (
               <li key={s.to}>
@@ -66,6 +62,7 @@ export default function AccountLayout() {
             </li>
           </ul>
         </nav>
+        </aside>
 
         <div className="min-w-0">
           <Outlet />
