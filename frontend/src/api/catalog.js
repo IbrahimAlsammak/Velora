@@ -8,6 +8,12 @@ export async function getHome() {
   return res.data
 }
 
+/** Delivery prices per area and city (set by the admin), used at checkout. */
+export async function getDelivery() {
+  const res = await api.get('/delivery')
+  return res.data
+}
+
 export async function getCategories() {
   const res = await api.get('/categories')
   return res.data

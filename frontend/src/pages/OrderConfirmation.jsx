@@ -69,7 +69,7 @@ export default function OrderConfirmation() {
         </ul>
         <dl className="mt-5 space-y-2 border-t border-gold-light pt-5 text-sm">
           <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatPrice(order.subtotal)}</dd></div>
-          <div className="flex justify-between"><dt>Shipping</dt><dd>{order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Free'}</dd></div>
+          <div className="flex justify-between"><dt>Delivery</dt><dd>{order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Free'}</dd></div>
           <div className="flex justify-between border-t border-gold-light pt-3 text-lg font-medium"><dt>Total</dt><dd>{formatPrice(order.total)}</dd></div>
         </dl>
       </div>

@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { getDelivery } from '../api/catalog.js'
 import { placeOrder } from '../api/orders.js'
 import { useAuth } from '../context/useAuth.js'
 import { useCart } from '../context/useCart.js'
+import useLoad from '../hooks/useLoad.js'
 import formatPrice from '../utils/formatPrice.js'
 import { availablePaymentMethods, PAYMENT_METHODS } from '../utils/paymentMethods.js'
 import { formatPhone } from '../utils/phone.js'
@@ -13,6 +15,7 @@ const EMPTY_FORM = {
   phone: '',
   region: '',
   city: '',
+  cityChoice: '', // a city id from the store's delivery list, or "other"
   addressLine: '',
   building: '',
   floor: '',
@@ -32,11 +35,29 @@ export default function Checkout() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const { data: delivery } = useLoad(getDelivery) // delivery prices set in the admin panel
 
   // Nothing to buy -> send them back to the bag
   if (items.length === 0 && !submitting) return <Navigate to="/cart" replace />
 
   const update = (field) => (e) => setForm({ ...form, [field]: e.target.value })
+
+  // ----- Delivery price (shown here; the backend calculates the real one) -----
+  const citiesInArea = (delivery?.cities ?? []).filter((c) => c.region === form.region)
+  const chosenCity = citiesInArea.find((c) => String(c.id) === form.cityChoice)
+  const typesOwnCity = citiesInArea.length === 0 || form.cityChoice === 'other'
+  const areaFee = Number(delivery?.regions.find((r) => r.region === form.region)?.fee ?? 0)
+  const freeOver = delivery?.freeDeliveryOver != null ? Number(delivery.freeDeliveryOver) : null
+  const isFree = freeOver != null && subtotal >= freeOver
+  const deliveryFee = !form.region ? null : isFree ? 0 : chosenCity ? Number(chosenCity.fee) : areaFee
+
+  // Changing the area resets the city
+  const chooseArea = (e) => setForm({ ...form, region: e.target.value, cityChoice: '', city: '' })
+  const chooseCity = (e) => {
+    const value = e.target.value
+    const city = citiesInArea.find((c) => String(c.id) === value)
+    setForm({ ...form, cityChoice: value, city: city ? city.name : '' })
+  }
 
   async function handleSubmit(e) {
     e.preventDefault() // stop the browser reloading the page
@@ -45,8 +66,10 @@ export default function Checkout() {
     setFieldErrors({})
     try {
       // Only IDs, options and quantities are sent - the backend works out the prices itself
+      const { cityChoice: _cityChoice, ...details } = form // cityChoice is only for this page
       const order = await placeOrder({
-        ...form,
+        ...details,
+        cityId: chosenCity ? chosenCity.id : null, // null = "other city" -> the area's price
         items: items.map((i) => ({ productId: i.productId, color: i.color, size: i.size, quantity: i.quantity })),
       })
       navigate(`/order/${order.orderNumber}`, { replace: true })
@@ -84,11 +107,14 @@ export default function Checkout() {
           </div>
 
           <h2 className="mt-10 font-display text-2xl">Delivery address</h2>
-          <p className="mt-1 text-sm text-mulberry/60">We deliver all over Lebanon.</p>
+          <p className="mt-1 text-sm text-mulberry/60">
+            We deliver all over Lebanon.
+            {freeOver != null && <> Free delivery on orders of {formatPrice(freeOver)} or more.</>}
+          </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm uppercase tracking-wider">Area</span>
-              <select value={form.region} onChange={update('region')}
+              <select value={form.region} onChange={chooseArea}
                 className={`mt-1 w-full rounded-xl border bg-white/70 px-4 py-3 outline-none focus:border-gold ${
                   fieldErrors.region ? 'border-red-400' : 'border-gold-light'
                 }`}>
@@ -97,7 +123,29 @@ export default function Checkout() {
               </select>
               {fieldErrors.region && <span className="mt-1 block text-sm text-red-700">{fieldErrors.region}</span>}
             </label>
-            <Field label="City / town" placeholder="e.g. Jounieh" value={form.city} onChange={update('city')} error={fieldErrors.city} autoComplete="address-level2" />
+            {/* City: from the store's list (each with its delivery price), or typed in */}
+            {citiesInArea.length > 0 && (
+              <label className="block">
+                <span className="text-sm uppercase tracking-wider">City / town</span>
+                <select value={form.cityChoice} onChange={chooseCity}
+                  className={`mt-1 w-full rounded-xl border bg-white/70 px-4 py-3 outline-none focus:border-gold ${
+                    fieldErrors.city && !form.cityChoice ? 'border-red-400' : 'border-gold-light'
+                  }`}>
+                  <option value="">— choose your city —</option>
+                  {citiesInArea.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name} · delivery {formatPrice(c.fee)}</option>
+                  ))}
+                  <option value="other">Other city / town · delivery {formatPrice(areaFee)}</option>
+                </select>
+              </label>
+            )}
+            {typesOwnCity && (
+              <Field label={citiesInArea.length > 0 ? 'Your city / town' : 'City / town'} placeholder="e.g. Jounieh"
+                value={form.city} onChange={update('city')} error={fieldErrors.city} autoComplete="address-level2" />
+            )}
+            {!typesOwnCity && fieldErrors.city && !form.cityChoice && (
+              <span className="text-sm text-red-700">{fieldErrors.city}</span>
+            )}
             <Field label="Street / neighbourhood" value={form.addressLine} onChange={update('addressLine')} error={fieldErrors.addressLine} autoComplete="address-line1" className="sm:col-span-2" />
             <Field label="Building (optional)" placeholder="Name or number" value={form.building} onChange={update('building')} error={fieldErrors.building} />
             <Field label="Floor (optional)" placeholder="e.g. 3rd floor" value={form.floor} onChange={update('floor')} error={fieldErrors.floor} />
@@ -148,11 +196,17 @@ export default function Checkout() {
           </ul>
           <dl className="mt-4 space-y-2 border-t border-gold-light pt-4 text-sm">
             <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatPrice(subtotal)}</dd></div>
-            <div className="flex justify-between"><dt>Shipping</dt><dd>Free</dd></div>
+            <div className="flex justify-between">
+              <dt>Delivery</dt>
+              <dd>{deliveryFee == null ? <span className="text-mulberry/50">choose your area</span> : deliveryFee === 0 ? 'Free' : formatPrice(deliveryFee)}</dd>
+            </div>
           </dl>
           <div className="mt-4 flex justify-between border-t border-gold-light pt-4 text-lg font-medium">
-            <span>Total</span><span>{formatPrice(subtotal)}</span>
+            <span>Total</span><span>{formatPrice(subtotal + (deliveryFee ?? 0))}</span>
           </div>
+          {freeOver != null && !isFree && (
+            <p className="mt-2 text-xs text-mulberry/60">Add {formatPrice(freeOver - subtotal)} more for free delivery.</p>
+          )}
 
           {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 

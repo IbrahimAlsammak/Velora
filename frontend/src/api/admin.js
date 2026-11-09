@@ -44,3 +44,10 @@ export function uploadPhoto(file) {
   body.append('file', file)
   return data(api.post('/admin/uploads', body)).then((d) => d.url)
 }
+
+// Delivery fees (per area + per city)
+export const updateDelivery = (regions, freeDeliveryOver) =>
+  data(api.put('/admin/delivery', { regions, freeDeliveryOver }))
+export const addDeliveryCity = (city) => data(api.post('/admin/delivery/cities', city))
+export const updateDeliveryCity = (id, city) => data(api.put(`/admin/delivery/cities/${id}`, city))
+export const deleteDeliveryCity = (id) => api.delete(`/admin/delivery/cities/${id}`)

@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.velora.backend.dto.CreateOrderRequest;
+import com.velora.backend.dto.DeliveryDtos.Quote;
 import com.velora.backend.dto.OrderDto;
 import com.velora.backend.entity.Order;
 import com.velora.backend.entity.OrderItem;
@@ -23,9 +24,6 @@ import com.velora.backend.util.Phones;
 @Service
 public class OrderService {
 
-    /** Shipping is free for now. Delivery fees per area will be added later. */
-    private static final BigDecimal SHIPPING_COST = BigDecimal.ZERO;
-
     /** All orders are delivered in Lebanon, so customers don't need to type a country. */
     private static final String DELIVERY_COUNTRY = "Lebanon";
 
@@ -36,12 +34,14 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final AuthService authService;
+    private final DeliveryService deliveryService;
 
     public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
-                        AuthService authService) {
+                        AuthService authService, DeliveryService deliveryService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.authService = authService;
+        this.deliveryService = deliveryService;
     }
 
     /**
@@ -104,8 +104,13 @@ public class OrderService {
         }
 
         order.setSubtotal(subtotal);
-        order.setShippingCost(SHIPPING_COST);
-        order.setTotal(subtotal.add(SHIPPING_COST));
+        // Delivery price: the city's own price, or the area's default; free above the store's limit
+        Quote delivery = deliveryService.quote(request.region(), request.cityId(), subtotal);
+        if (delivery.cityName() != null) {
+            order.setCity(delivery.cityName()); // the exact name from the store's list
+        }
+        order.setShippingCost(delivery.fee());
+        order.setTotal(subtotal.add(delivery.fee()));
 
         return OrderDto.from(orderRepository.save(order));
     }

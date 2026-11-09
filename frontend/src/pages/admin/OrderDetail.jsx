@@ -189,7 +189,7 @@ export default function OrderDetail() {
         </table>
         <dl className="ml-auto mt-4 max-w-xs space-y-1 border-t border-gold-light pt-3 text-sm">
           <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatPrice(order.subtotal)}</dd></div>
-          <div className="flex justify-between"><dt>Shipping</dt><dd>{order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Free'}</dd></div>
+          <div className="flex justify-between"><dt>Delivery</dt><dd>{order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Free'}</dd></div>
           <div className="flex justify-between text-base font-medium"><dt>Total</dt><dd>{formatPrice(order.total)}</dd></div>
         </dl>
       </Card>

@@ -61,10 +61,10 @@ export default function Cart() {
           <h2 className="font-display text-2xl">Summary</h2>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatPrice(subtotal)}</dd></div>
-            <div className="flex justify-between"><dt>Shipping</dt><dd>Free</dd></div>
+            <div className="flex justify-between"><dt>Delivery</dt><dd className="text-mulberry/60">calculated at checkout</dd></div>
           </dl>
           <div className="mt-4 flex justify-between border-t border-gold-light pt-4 text-lg font-medium">
-            <span>Total</span><span>{formatPrice(subtotal)}</span>
+            <span>Total <span className="text-xs font-normal text-mulberry/60">(before delivery)</span></span><span>{formatPrice(subtotal)}</span>
           </div>
           <Link to="/checkout" className="mt-6 block rounded-full bg-mulberry py-3.5 text-center text-sm uppercase tracking-[0.2em] text-cream hover:bg-gold">
             Checkout
