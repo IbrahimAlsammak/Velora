@@ -1,0 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Jost:wght@300;400;500&display=swap');
+@import 'tailwindcss';
+
+/* Velora brand colours & fonts -> usable as classes like bg-mulberry, text-gold, font-display */
+@theme {
+  --color-mulberry: #5b3a4a;
+  --color-gold: #b08a5e;
+  --color-gold-soft: #c4a074;
+  --color-gold-light: #d8b98f;
+  --color-cream: #f7f1ea;
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Jost', system-ui, sans-serif;
+}
+
+body {
+  @apply bg-cream text-mulberry font-sans antialiased;
+}
+
+/* Cormorant uses "old-style" numbers by default (1 looks like a Roman I, and some
+   digits are smaller than others). This switches to normal, even-height numbers. */
+.font-display {
+  font-variant-numeric: lining-nums;
+}

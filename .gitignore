@@ -1,0 +1,24 @@
+# Files Git must NEVER save or upload.
+# (backend/.gitignore and frontend/.gitignore add more rules for their own folders)
+
+# 🔒 Secrets: passwords and keys - also listed in backend/.gitignore, repeated here for safety
+application-secrets.properties
+*.env
+.env*
+
+# Personal notes (chat PDFs, guides) - kept on this computer only
+*.pdf
+
+# Uploaded product photos (they'll be moved to the server when the site goes online)
+backend/uploads/
+
+# Things tools re-create automatically
+backend/target/
+frontend/node_modules/
+frontend/dist/
+
+# Editor / system files
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

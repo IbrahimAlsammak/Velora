@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <title>Velora icon</title>
+  <rect width="160" height="160" rx="32" fill="#F7F1EA"/>
+  <g transform="translate(20,2)">
+    <path d="M6,150 V62 A54,54 0 0 1 114,62 V150" fill="none" stroke="#B08A5E" stroke-width="4"/>
+    <path d="M60,20 L63.5,30 L60,40 L56.5,30 Z" fill="#B08A5E"/>
+    <path d="M34,60 L46,60 L62,116 L76,60 L83,60 L60,136 Z" fill="#5B3A4A"/>
+  </g>
+</svg>
