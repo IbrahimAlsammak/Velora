@@ -41,7 +41,7 @@ public class AccountController {
         this.orderRepository = orderRepository;
     }
 
-    /** @AuthenticationPrincipal Jwt = the checked login token; its "subject" is the user's email. */
+    /** @AuthenticationPrincipal Jwt = the checked login token; its "subject" is the user's ID number. */
     @GetMapping("/orders")
     @Transactional(readOnly = true)
     public List<OrderSummary> myOrders(@AuthenticationPrincipal Jwt jwt) {
