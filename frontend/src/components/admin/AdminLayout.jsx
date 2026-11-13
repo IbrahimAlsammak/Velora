@@ -45,7 +45,7 @@ export default function AdminLayout() {
       <aside className="border-b border-gold-light/60 bg-white/70 md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:border-b-0 md:border-r">
         <div className="flex items-center justify-between px-4 py-4 md:block">
           <Link to="/admin"><img src={logo} alt="Velora" className="h-10" /></Link>
-          <p className="text-xs uppercase tracking-[0.25em] text-gold md:mt-2">Admin</p>
+          <p className="min-w-0 truncate text-xs text-gold md:mt-2" title={user?.email}>{user?.email}</p>
         </div>
 
         <ShopSwitch shop={shop} />
