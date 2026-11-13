@@ -12,6 +12,7 @@ import com.velora.backend.dto.AdminDtos.AdminProduct;
 import com.velora.backend.dto.AdminDtos.CategoryForm;
 import com.velora.backend.dto.AdminDtos.ProductForm;
 import com.velora.backend.entity.Category;
+import com.velora.backend.entity.OrderStatus;
 import com.velora.backend.entity.Product;
 import com.velora.backend.entity.ProductColor;
 import com.velora.backend.repository.CategoryRepository;
@@ -65,6 +66,15 @@ public class AdminCatalogService {
     @Transactional
     public void deleteProduct(Long id) {
         Product p = findProduct(id);
+        // Not while orders with it are still open: if one got cancelled, its stock couldn't go back
+        long open = orderRepository.countOrdersWithProductInStatus(id,
+                List.of(OrderStatus.PENDING, OrderStatus.PAID, OrderStatus.SHIPPED));
+        if (open > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, (open == 1 ? "1 order" : open + " orders")
+                    + " with this product " + (open == 1 ? "is" : "are") + " not finished yet. "
+                    + "Untick \"Visible in shop\" to hide it for now, and delete it after "
+                    + (open == 1 ? "it is" : "they are") + " delivered or cancelled.");
+        }
         // Past orders keep the product's name, colour, size and price - only the link is removed
         orderRepository.unlinkOrderItemsFromProduct(id);
         productRepository.delete(p);

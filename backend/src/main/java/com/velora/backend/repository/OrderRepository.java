@@ -53,6 +53,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("select coalesce(sum(o.total), 0) from Order o where o.status in (com.velora.backend.entity.OrderStatus.SHIPPED, com.velora.backend.entity.OrderStatus.DELIVERED)")
     BigDecimal totalSales();
 
+    /** How many orders with this product are in one of these statuses (e.g. not finished yet)? */
+    @Query("select count(distinct o) from Order o join o.items i where i.product.id = :productId and o.status in :statuses")
+    long countOrdersWithProductInStatus(@Param("productId") Long productId, @Param("statuses") Collection<OrderStatus> statuses);
+
     /** Before deleting a product: past orders keep their copy of it, but lose the link. */
     @Modifying
     @Query("update OrderItem i set i.product = null where i.product.id = :productId")
