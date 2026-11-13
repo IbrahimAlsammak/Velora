@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { getHome } from '../api/catalog.js'
+import { getHome, getSlides } from '../api/catalog.js'
 import ProductCard from '../components/ProductCard.jsx'
 import HeroSlideshow from '../components/HeroSlideshow.jsx'
 import ProductImage from '../components/ProductImage.jsx'
@@ -8,12 +8,17 @@ import useLoad from '../hooks/useLoad.js'
 
 export default function Home() {
   const { data, error } = useLoad(getHome)
-  // The banner arch shows the featured products that have a photo, one after another
-  const heroProducts = data?.featured.filter((p) => p.imageUrl) ?? []
+  const banner = useLoad(getSlides)
+  // The banner arch shows YOUR banner photos (Admin → Home banner).
+  // None added yet? Then the featured products that have a photo. None of those? The "V".
+  const ownSlides = (banner.data ?? []).map((s, i) => ({ ...s, key: `slide-${i}` }))
+  const productSlides = (data?.featured ?? []).filter((p) => p.imageUrl)
+    .map((p) => ({ key: `product-${p.id}`, imageUrl: p.imageUrl, caption: p.name, link: `/product/${p.slug}` }))
+  const slides = ownSlides.length ? ownSlides : productSlides
 
   return (
     <>
-      <Hero products={heroProducts} />
+      <Hero slides={slides} />
 
       {error && <p className="mt-10 text-center text-red-700">{error}</p>}
 
@@ -43,7 +48,7 @@ export default function Home() {
 }
 
 /** The big welcome banner at the top. */
-function Hero({ products }) {
+function Hero({ slides }) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-cream via-cream to-gold-light/40">
       <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-24">
@@ -68,7 +73,7 @@ function Hero({ products }) {
         <div className="relative mx-auto w-64 sm:w-80 md:w-96">
           <div className="absolute -inset-4 rounded-t-full border border-gold/50" aria-hidden />
           <div className="relative aspect-[3/4] overflow-hidden rounded-t-full border-2 border-gold/70 bg-gradient-to-b from-cream to-gold-light/60">
-            <HeroSlideshow products={products} />
+            <HeroSlideshow slides={slides} />
           </div>
         </div>
       </div>

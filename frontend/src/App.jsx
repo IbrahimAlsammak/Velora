@@ -12,6 +12,7 @@ import Categories from './pages/admin/Categories.jsx'
 import Customers from './pages/admin/Customers.jsx'
 import Dashboard from './pages/admin/Dashboard.jsx'
 import Delivery from './pages/admin/Delivery.jsx'
+import HomeBanner from './pages/admin/HomeBanner.jsx'
 import MyAccount from './pages/admin/MyAccount.jsx'
 import AdminOrderDetail from './pages/admin/OrderDetail.jsx'
 import AdminOrders from './pages/admin/Orders.jsx'
@@ -78,6 +79,7 @@ export default function App() {
           <Route path="categories" element={<Categories />} />
           <Route path="customers" element={<Customers />} />
           <Route path="delivery" element={<Delivery />} />
+          <Route path="banner" element={<HomeBanner />} />
           <Route path="account" element={<MyAccount />} />
         </Route>
       </Routes>

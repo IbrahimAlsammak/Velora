@@ -46,6 +46,9 @@ export function uploadPhoto(file) {
   return data(api.post('/admin/uploads', body)).then((d) => d.url)
 }
 
+// Home page banner photos: [{ imageUrl, caption, link }] - the whole list is saved at once
+export const saveSlides = (slides) => data(api.put('/admin/store/slides', { slides }))
+
 // Maintenance: true = close the shop ("back soon" page), false = open it again
 export const setMaintenance = (maintenance) => data(api.put('/admin/store/maintenance', { maintenance }))
 

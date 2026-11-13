@@ -1,21 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import ProductImage from './ProductImage.jsx'
 
 const NEXT_AFTER_MS = 4000 // a new photo every 4 seconds
 
 /**
- * The photos inside the arch on the home page banner.
- * Shows the main photo of each featured product, one after another (soft fade).
+ * The photos inside the arch on the home page banner, one after another (soft fade).
+ * slides = [{ key, imageUrl, caption, link }] - your banner photos (Admin → Home banner),
+ * or, if you haven't added any, the featured products' photos.
  * - ‹ › arrows and the dots below to move by hand, swipe on phones
  * - pauses while the mouse is over it
  * - one photo = no movement; no photos = the big "V" monogram
  */
-export default function HeroSlideshow({ products }) {
+export default function HeroSlideshow({ slides }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const touchStartX = useRef(null)
-  const count = products.length
+  const count = slides.length
   const current = count ? index % count : 0 // stays valid if the list gets shorter
 
   // Move on by itself (not while paused, not if the visitor prefers less motion)
@@ -51,16 +51,27 @@ export default function HeroSlideshow({ products }) {
       }}
     >
       {/* All photos on top of each other - only the current one is visible (fade) */}
-      {products.map((p, i) => (
-        <Link key={p.id} to={`/product/${p.slug}`} tabIndex={i === current ? 0 : -1} aria-hidden={i !== current}
-          className={`absolute inset-0 transition-opacity duration-1000 ${i === current ? 'opacity-100' : 'pointer-events-none opacity-0'}`}>
-          <ProductImage product={p} />
-          {/* product name at the bottom of the photo */}
-          <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-mulberry/70 to-transparent px-4 pb-8 pt-10 text-center font-display text-xl text-cream">
-            {p.name}
-          </span>
-        </Link>
-      ))}
+      {slides.map((slide, i) => {
+        const className = `absolute inset-0 transition-opacity duration-1000 ${i === current ? 'opacity-100' : 'pointer-events-none opacity-0'}`
+        const content = (
+          <>
+            <img src={slide.imageUrl} alt={slide.caption ?? ''} className="h-full w-full object-cover" />
+            {/* text at the bottom of the photo */}
+            {slide.caption && (
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-mulberry/70 to-transparent px-4 pb-8 pt-10 text-center font-display text-xl text-cream">
+                {slide.caption}
+              </span>
+            )}
+          </>
+        )
+        return slide.link ? (
+          <Link key={slide.key} to={slide.link} tabIndex={i === current ? 0 : -1} aria-hidden={i !== current} className={className}>
+            {content}
+          </Link>
+        ) : (
+          <div key={slide.key} aria-hidden={i !== current} className={className}>{content}</div>
+        )
+      })}
 
       {count > 1 && (
         <>
@@ -75,8 +86,8 @@ export default function HeroSlideshow({ products }) {
 
           {/* Dots: one per photo, the current one is filled */}
           <div className="absolute inset-x-0 bottom-3 flex justify-center gap-2">
-            {products.map((p, i) => (
-              <button key={p.id} type="button" aria-label={`Show ${p.name}`} onClick={() => setIndex(i)}
+            {slides.map((slide, i) => (
+              <button key={slide.key} type="button" aria-label={`Show photo ${i + 1}`} onClick={() => setIndex(i)}
                 className={`h-2 rounded-full transition-all ${i === current ? 'w-6 bg-cream' : 'w-2 bg-cream/60 hover:bg-cream'}`} />
             ))}
           </div>

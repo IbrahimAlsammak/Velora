@@ -17,6 +17,7 @@ const LINKS = [
   { to: '/admin/categories', label: 'Categories', icon: '▦' },
   { to: '/admin/customers', label: 'Customers', icon: '◯' },
   { to: '/admin/delivery', label: 'Delivery fees', icon: '⛟' },
+  { to: '/admin/banner', label: 'Home banner', icon: '▣' },
   { to: '/admin/account', label: 'My account', icon: '⚿' },
 ]
 

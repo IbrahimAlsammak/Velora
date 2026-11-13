@@ -1,13 +1,16 @@
 package com.velora.backend.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.velora.backend.dto.StoreDtos.SlideDto;
 import com.velora.backend.dto.StoreDtos.StoreStatus;
+import com.velora.backend.entity.HomeSlide;
 import com.velora.backend.entity.StoreSettings;
 import com.velora.backend.repository.StoreSettingsRepository;
 
@@ -36,6 +39,28 @@ public class StoreService {
             settingsRepository.save(s);
         }
         return status();
+    }
+
+    /** The home page banner photos, in order. */
+    @Transactional(readOnly = true)
+    public List<SlideDto> slides() {
+        return settings().getSlides().stream().map(SlideDto::from).toList();
+    }
+
+    /** Replaces the whole slideshow with the list from the admin panel. */
+    @Transactional
+    public List<SlideDto> saveSlides(List<SlideDto> slides) {
+        StoreSettings s = settings();
+        s.getSlides().clear();
+        for (SlideDto d : slides) {
+            s.getSlides().add(new HomeSlide(d.imageUrl().trim(), blankToNull(d.caption()), blankToNull(d.link())));
+        }
+        settingsRepository.save(s);
+        return slides();
+    }
+
+    private static String blankToNull(String text) {
+        return text == null || text.isBlank() ? null : text.trim();
     }
 
     /** Called before saving a new order: refuses it while the shop is closed. */

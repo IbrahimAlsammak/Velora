@@ -14,6 +14,12 @@ export async function getDelivery() {
   return res.data
 }
 
+/** The home page banner photos (chosen in Admin → Home banner). */
+export async function getSlides() {
+  const res = await api.get('/store/slides')
+  return res.data
+}
+
 /** Is the shop open, or closed for maintenance? */
 export async function getStoreStatus() {
   const res = await api.get('/store/status')
