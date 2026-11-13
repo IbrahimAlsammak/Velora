@@ -40,6 +40,7 @@ public class AdminOrderService {
                 orderRepository.countByStatus(OrderStatus.PENDING),
                 orderRepository.totalSales(),
                 productRepository.countByActiveTrue(),
+                productRepository.totalStockOfActiveProducts(),
                 productRepository.findByActiveTrueAndStockLessThanEqualOrderByStockAsc(LOW_STOCK_LIMIT)
                         .stream().map(AdminProduct::from).toList(),
                 orderRepository.findTop5ByOrderByCreatedAtDesc().stream().map(OrderSummary::from).toList());

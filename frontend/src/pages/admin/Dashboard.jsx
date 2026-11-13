@@ -21,7 +21,7 @@ export default function Dashboard() {
             <Stat label="Waiting (pending)" value={data.pendingOrders} highlight={data.pendingOrders > 0}
               link="/admin/orders?status=PENDING" />
             <Stat label="Sales" value={formatPrice(data.totalSales)} hint="shipped and delivered orders" />
-            <Stat label="Products in shop" value={data.activeProducts} />
+            <Stat label="Pieces in stock" value={data.piecesInStock} hint={`${data.activeProducts} products in shop`} link="/admin/products" />
           </div>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_340px]">

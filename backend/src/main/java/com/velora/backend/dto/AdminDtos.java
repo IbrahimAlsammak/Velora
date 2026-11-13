@@ -31,6 +31,7 @@ public final class AdminDtos {
             long pendingOrders,
             BigDecimal totalSales,
             long activeProducts,
+            long piecesInStock,
             List<AdminProduct> lowStock,
             List<OrderSummary> recentOrders) {}
 

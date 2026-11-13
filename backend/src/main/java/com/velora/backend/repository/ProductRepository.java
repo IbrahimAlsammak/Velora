@@ -40,6 +40,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     long countByActiveTrueAndCategoryId(Long categoryId);
 
+    /** Total pieces in stock of all visible products (goes down with every order). */
+    @Query("select coalesce(sum(p.stock), 0) from Product p where p.active = true")
+    long totalStockOfActiveProducts();
+
     // ----- Admin: ALL products, including hidden ones -----
     @EntityGraph(attributePaths = "category")
     List<Product> findAllByOrderByCreatedAtDesc();
