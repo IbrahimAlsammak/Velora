@@ -28,6 +28,23 @@ const NEXT_STEP = {
   },
 }
 
+/**
+ * "Undo" - one step back, for when a button was pressed by mistake
+ * (e.g. marked as shipped too early -> it also leaves the sales report again).
+ */
+const PREVIOUS_STEP = {
+  WHISH_TRANSFER: {
+    PAID: { status: 'PENDING', label: 'Not paid yet' },
+    SHIPPED: { status: 'PAID', label: 'Not shipped yet' },
+    DELIVERED: { status: 'SHIPPED', label: 'Not delivered yet' },
+  },
+  CASH_ON_DELIVERY: {
+    PAID: { status: 'PENDING', label: 'Not confirmed yet' },
+    SHIPPED: { status: 'PENDING', label: 'Not shipped yet' },
+    DELIVERED: { status: 'SHIPPED', label: 'Not delivered yet' },
+  },
+}
+
 export default function OrderDetail() {
   const { orderNumber } = useParams()
   const navigate = useNavigate()
@@ -75,6 +92,13 @@ export default function OrderDetail() {
   if (!order) return null
 
   const next = NEXT_STEP[order.paymentMethod]?.[order.status]
+  const previous = PREVIOUS_STEP[order.paymentMethod]?.[order.status]
+  const undoButton = previous && (
+    <Button variant="secondary" disabled={busy} onClick={() => setStatus(previous.status)}
+      title="Pressed by mistake? Go one step back">
+      ↩ Undo: {previous.label}
+    </Button>
+  )
 
   return (
     <>
@@ -104,6 +128,7 @@ export default function OrderDetail() {
       {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
         <Card className="mb-6 flex flex-wrap items-center gap-3">
           <span className="mr-auto text-sm text-mulberry/70">Update this order:</span>
+          {undoButton}
           {next && <Button disabled={busy} onClick={() => setStatus(next.status)}>{next.label}</Button>}
           <Button variant="danger" disabled={busy} onClick={() => setStatus('CANCELLED')}>Cancel order</Button>
         </Card>
@@ -111,6 +136,7 @@ export default function OrderDetail() {
       {order.status === 'DELIVERED' && (
         <Card className="mb-6 flex flex-wrap items-center gap-3">
           <span className="mr-auto text-sm text-green-800">✓ This order is complete.</span>
+          {undoButton}
           {/* For returns: cancels the order and puts the items back into stock */}
           <Button variant="danger" disabled={busy} onClick={() => setStatus('CANCELLED', true)}>
             Customer returned it
