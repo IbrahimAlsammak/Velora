@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getOrderAlerts } from '../../api/admin.js'
 
-const CHECK_EVERY_MS = 30000 // ask the backend every 30 seconds
+const CHECK_EVERY_MS = 15000 // ask the backend every 15 seconds
 
 /**
  * How many orders are waiting (PENDING) - shown as the red number next to "Orders"

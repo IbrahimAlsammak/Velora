@@ -97,7 +97,8 @@ export default function AdminLayout() {
           </div>
         )}
         {/* The current admin page appears here */}
-        <Outlet />
+        {/* pending is passed to the pages, so Dashboard and Orders reload when a new order arrives */}
+        <Outlet context={{ pending }} />
 
         <div className="mt-12 flex gap-4 border-t border-gold-light/60 pt-4 text-sm md:hidden">
           <a href="/" target="_blank" rel="noreferrer" className="text-gold">View shop ↗</a>

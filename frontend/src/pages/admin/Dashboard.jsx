@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 import { getDashboard } from '../../api/admin.js'
 import { Card, ErrorBox, Loading, PageHeader, StatusBadge } from '../../components/admin/ui.jsx'
 import useLoad from '../../hooks/useLoad.js'
@@ -6,7 +6,8 @@ import formatDate from '../../utils/formatDate.js'
 import formatPrice from '../../utils/formatPrice.js'
 
 export default function Dashboard() {
-  const { data, error, loading } = useLoad(getDashboard)
+  const { pending } = useOutletContext() ?? {} // waiting orders, checked every 15 s by the admin frame
+  const { data, error, loading } = useLoad(getDashboard, [pending]) // reloads by itself when it changes
 
   return (
     <>

@@ -1,4 +1,4 @@
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useOutletContext, useSearchParams } from 'react-router-dom'
 import { getOrders } from '../../api/admin.js'
 import { Card, ErrorBox, Loading, PageHeader, StatusBadge } from '../../components/admin/ui.jsx'
 import useLoad from '../../hooks/useLoad.js'
@@ -11,7 +11,9 @@ const FILTERS = ['', 'PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED']
 export default function Orders() {
   const [searchParams, setSearchParams] = useSearchParams()
   const status = searchParams.get('status') || ''
-  const { data: orders, error, loading } = useLoad(() => getOrders(status), [status])
+  const { pending } = useOutletContext() ?? {} // waiting orders, checked every 15 s by the admin frame
+  // reloads when you change the filter, and by itself when a new order arrives
+  const { data: orders, error, loading } = useLoad(() => getOrders(status), [status, pending])
   const navigate = useNavigate()
 
   return (
@@ -30,9 +32,9 @@ export default function Orders() {
       </div>
 
       <ErrorBox message={error} />
-      {loading && <Loading />}
+      {loading && !orders && <Loading />}
 
-      {!loading && orders && (
+      {orders && (
         <Card className="overflow-x-auto p-0">
           {orders.length === 0 ? (
             <p className="p-6 text-sm text-mulberry/60">No orders here.</p>
