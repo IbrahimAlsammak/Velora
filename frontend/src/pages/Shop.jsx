@@ -44,7 +44,7 @@ export default function Shop() {
       <header className="text-center">
         <h1 className="font-display text-4xl md:text-5xl font-semibold">{current ? current.name : 'Shop All'}</h1>
         <p className="mx-auto mt-3 max-w-xl text-mulberry/70">
-          {current ? current.description : 'Discover our collection of modest essentials.'}
+          {current ? current.description : 'Discover our modest fashion, makeup sets and bags.'}
         </p>
       </header>
 

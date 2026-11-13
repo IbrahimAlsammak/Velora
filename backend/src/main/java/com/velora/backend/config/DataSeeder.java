@@ -16,8 +16,9 @@ import com.velora.backend.util.Slugs;
 
 /**
  * SAMPLE data so the shop isn't empty while we build it.
- * - Empty database      -> creates 4 categories and 10 sample products.
- * - Products already in -> only fills in missing colours/sizes of the sample products.
+ * - Each start-up: any category below that is missing is created, with its sample products
+ *   (so an empty database gets everything, and a new category added here appears automatically).
+ * - Sample products that are already there only get their missing colours/sizes filled in.
  * Later you'll add real products from the admin panel.
  */
 @Component
@@ -31,8 +32,23 @@ public class DataSeeder implements CommandLineRunner {
             color("Black", "#1F1A1C"), color("Navy", "#2B3445"), color("Taupe", "#8B7D72"));
     private static final List<ProductColor> DRESS_COLORS = List.of(
             color("Olive", "#6B6B47"), color("Mocha", "#7B5E57"), color("Sand", "#D8C3A5"));
+    private static final List<ProductColor> MAKEUP_SHADES = List.of(
+            color("Light", "#E8C4A8"), color("Medium", "#C99A76"), color("Deep", "#8D5B3E"));
+    private static final List<ProductColor> BAG_COLORS = List.of(
+            color("Black", "#1F1A1C"), color("Beige", "#D8C3A5"), color("Blush", "#E3B7B0"));
     private static final List<String> CLOTHING_SIZES = List.of("S", "M", "L", "XL");
     private static final List<String> ONE_SIZE = List.of();
+
+    /** One category: name + the short text shown at the top of its shop page. */
+    private record CategoryInfo(String name, String description) {}
+
+    private static final List<CategoryInfo> CATEGORIES = List.of(
+            new CategoryInfo("Hijabs", "Soft, breathable hijabs for every day and every occasion."),
+            new CategoryInfo("Abayas", "Flowing abayas with clean, elegant lines."),
+            new CategoryInfo("Dresses", "Modest maxi dresses, from casual to occasion wear."),
+            new CategoryInfo("Accessories", "Underscarves, pins and the finishing touches."),
+            new CategoryInfo("Makeup Sets", "Ready-made makeup sets with soft, natural shades - also lovely as a gift."),
+            new CategoryInfo("Bags", "Small handbags, clutches and crossbody bags to finish every look."));
 
     /** One sample product (a "record" is a small class that just holds data). */
     private record Sample(String name, String description, String price, String category, int stock,
@@ -48,7 +64,13 @@ public class DataSeeder implements CommandLineRunner {
             new Sample("Linen Maxi Dress", "Relaxed linen-blend maxi dress with long sleeves and side pockets.", "49.99", "Dresses", 20, true, DRESS_COLORS, CLOTHING_SIZES),
             new Sample("Satin Occasion Dress", "Elegant satin dress with a high neckline, made for special days.", "79.99", "Dresses", 8, false, List.of(color("Champagne", "#D8B98F"), color("Mulberry", "#5B3A4A")), CLOTHING_SIZES),
             new Sample("Tie-Back Underscarf", "Keeps your hijab secure and hair in place. Adjustable tie-back.", "6.99", "Accessories", 100, false, List.of(color("Black", "#1F1A1C"), color("Nude", "#D9B8A0"), color("White", "#FAFAF7")), ONE_SIZE),
-            new Sample("Pearl Hijab Pins (Set of 6)", "Snag-free pins with a pearl finish.", "8.99", "Accessories", 75, false, List.of(), ONE_SIZE)); // pins: no colour/size choice
+            new Sample("Pearl Hijab Pins (Set of 6)", "Snag-free pins with a pearl finish.", "8.99", "Accessories", 75, false, List.of(), ONE_SIZE), // pins: no colour/size choice
+            new Sample("Everyday Glow Makeup Set", "Foundation, blush, mascara and a nude lipstick in one pouch. Choose the shade closest to your skin.", "39.99", "Makeup Sets", 20, true, MAKEUP_SHADES, ONE_SIZE),
+            new Sample("Nude Lip Trio Set", "Three creamy lipsticks in soft nude and rose tones.", "19.99", "Makeup Sets", 30, false, List.of(), ONE_SIZE),
+            new Sample("Mini Travel Makeup Kit", "Small sizes of the essentials in a zip bag - fits in any handbag.", "24.99", "Makeup Sets", 25, false, List.of(), ONE_SIZE),
+            new Sample("Mini Crossbody Bag", "A small, light bag with an adjustable strap - room for your phone, keys and lipstick.", "34.99", "Bags", 18, true, BAG_COLORS, ONE_SIZE),
+            new Sample("Pearl Evening Clutch", "A satin clutch with a pearl clasp, made for weddings and special evenings.", "44.99", "Bags", 10, false, List.of(color("Ivory", "#F3EDE2"), color("Champagne", "#D8B98F")), ONE_SIZE),
+            new Sample("Quilted Mini Shoulder Bag", "Soft quilted bag with a gold-tone chain strap.", "39.99", "Bags", 15, false, BAG_COLORS, ONE_SIZE));
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
@@ -61,26 +83,28 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (categoryRepository.count() == 0) {
-            seedEverything();
-        } else {
-            fillMissingOptions();
+        for (CategoryInfo c : CATEGORIES) {
+            if (categoryRepository.findBySlug(slugify(c.name())).isEmpty()) {
+                addCategoryWithSamples(c);
+            }
         }
+        fillMissingOptions();
     }
 
-    private void seedEverything() {
-        category("Hijabs", "Soft, breathable hijabs for every day and every occasion.");
-        category("Abayas", "Flowing abayas with clean, elegant lines.");
-        category("Dresses", "Modest maxi dresses, from casual to occasion wear.");
-        category("Accessories", "Underscarves, pins and the finishing touches.");
+    /** Creates one category, then its sample products. */
+    private void addCategoryWithSamples(CategoryInfo c) {
+        Category category = categoryRepository.save(new Category(c.name(), slugify(c.name()), c.description()));
 
         for (Sample s : SAMPLES) {
+            if (!s.category().equals(c.name()) || productRepository.existsBySlug(slugify(s.name()))) {
+                continue; // another category's sample, or already in the shop
+            }
             Product p = new Product();
             p.setName(s.name());
             p.setSlug(slugify(s.name()));
             p.setDescription(s.description());
             p.setPrice(new BigDecimal(s.price()));
-            p.setCategory(categoryRepository.findBySlug(slugify(s.category())).orElseThrow());
+            p.setCategory(category);
             p.setStock(s.stock());
             p.setFeatured(s.featured());
             applyOptions(p, s);
@@ -102,10 +126,6 @@ public class DataSeeder implements CommandLineRunner {
     private void applyOptions(Product p, Sample s) {
         s.colors().forEach(c -> p.getColors().add(color(c.getName(), c.getHex())));
         p.getSizes().addAll(s.sizes());
-    }
-
-    private void category(String name, String description) {
-        categoryRepository.save(new Category(name, slugify(name), description));
     }
 
     private static ProductColor color(String name, String hex) {

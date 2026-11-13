@@ -24,12 +24,12 @@ export const STORE = {
   // Home page banner text
   heroEyebrow: 'The new collection',
   heroTitle: 'Modesty, beautifully made',
-  heroText: 'Hijabs, abayas and dresses designed for comfort, coverage and quiet elegance - every day.',
+  heroText: 'Hijabs, abayas, dresses, makeup sets and small bags - chosen for comfort, beauty and quiet elegance, every day.',
 
   // The three short promises shown on the home page
   promises: [
     { title: 'Modest by design', text: 'Every piece is cut for coverage and ease of movement.' },
-    { title: 'Chosen with care', text: 'Fabrics picked for softness, drape and breathability.' },
-    { title: 'Here to help', text: 'Questions about sizing or styling? Just get in touch.' },
+    { title: 'Chosen with care', text: 'Soft fabrics, gentle makeup and bags that go with every outfit.' },
+    { title: 'Here to help', text: 'Questions about sizing, shades or styling? Just get in touch.' },
   ],
 }

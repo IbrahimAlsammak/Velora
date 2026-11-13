@@ -18,7 +18,7 @@ export default function Footer() {
         <div className="lg:col-span-2">
           <img src={logoWhite} alt="Velora" className="h-12" />
           <p className="mt-4 max-w-sm text-sm text-cream/70">
-            Modest clothing with quiet elegance - made to feel as good as it looks.
+            Modest fashion, makeup and bags with quiet elegance - made to feel as good as it looks.
           </p>
         </div>
 
