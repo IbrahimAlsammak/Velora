@@ -25,7 +25,7 @@ export default function AdminLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const shop = useShopSwitch()
-  const alerts = useOrderAlerts() // "ding" + pop-up when a new order arrives
+  const pending = useOrderAlerts() // how many orders are waiting (red number)
 
   // Browser tab says "Velora Admin" while you're in the admin panel
   useEffect(() => {
@@ -38,8 +38,8 @@ export default function AdminLayout() {
 
   // Waiting orders also show in the tab name: "(2) Velora Admin"
   useEffect(() => {
-    document.title = alerts.pending > 0 ? `(${alerts.pending}) Velora Admin` : 'Velora Admin'
-  }, [alerts.pending])
+    document.title = pending > 0 ? `(${pending}) Velora Admin` : 'Velora Admin'
+  }, [pending])
 
   const linkClass = ({ isActive }) =>
     `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
@@ -56,7 +56,6 @@ export default function AdminLayout() {
         </div>
 
         <ShopSwitch shop={shop} />
-        <AlertsControl alerts={alerts} />
         <PhoneAlerts />
 
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-1 md:flex-col md:overflow-x-visible md:overflow-y-auto">
@@ -66,9 +65,9 @@ export default function AdminLayout() {
               <span aria-hidden className="w-5 shrink-0 text-center">{l.icon}</span>
               <span className="whitespace-nowrap">{l.label}</span>
               {/* red number = orders waiting for you */}
-              {l.to === '/admin/orders' && alerts.pending > 0 && (
+              {l.to === '/admin/orders' && pending > 0 && (
                 <span className="ml-auto rounded-full bg-red-700 px-2 py-0.5 text-xs font-semibold text-white" title="Waiting orders">
-                  {alerts.pending}
+                  {pending}
                 </span>
               )}
             </NavLink>
@@ -156,24 +155,6 @@ function ShopSwitch({ shop }) {
   )
 }
 
-/** "Turn on order alerts" button, or (once on) a small "Alerts on · Test" line. */
-function AlertsControl({ alerts }) {
-  if (alerts.permission === 'default') {
-    return (
-      <button type="button" onClick={alerts.enable}
-        className="mx-3 mb-3 rounded-lg border border-gold bg-gold-light/20 px-3 py-2 text-left text-sm hover:bg-gold-light/40">
-        🔔 Turn on new-order alerts
-      </button>
-    )
-  }
-  return (
-    <p className="mx-3 mb-3 px-1 text-xs text-mulberry/70">
-      {alerts.permission === 'granted' ? '🔔 Order alerts on' : '🔔 Sound alerts on (pop-ups blocked)'}
-      {' · '}
-      <button type="button" onClick={alerts.test} className="text-gold underline hover:text-mulberry">Test</button>
-    </p>
-  )
-}
 
 /** "📱 Phone alerts (Telegram): on · Test" - messages to your phone, even when this panel is closed. */
 function PhoneAlerts() {
@@ -194,7 +175,7 @@ function PhoneAlerts() {
   }
 
   return (
-    <p className="mx-3 mb-3 -mt-2 px-1 text-xs text-mulberry/70">
+    <p className="mx-3 mb-3 px-1 text-xs text-mulberry/70">
       {data.configured ? '📱 Phone alerts on' : '📱 Phone alerts: not set up'}
       {data.configured && (
         <>
