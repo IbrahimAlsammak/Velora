@@ -35,10 +35,12 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final AuthService authService;
     private final DeliveryService deliveryService;
+    private final StoreService storeService;
 
     public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
-                        AuthService authService, DeliveryService deliveryService) {
+                        AuthService authService, DeliveryService deliveryService, StoreService storeService) {
         this.orderRepository = orderRepository;
+        this.storeService = storeService;
         this.productRepository = productRepository;
         this.authService = authService;
         this.deliveryService = deliveryService;
@@ -50,6 +52,7 @@ public class OrderService {
      */
     @Transactional
     public OrderDto placeOrder(CreateOrderRequest request, String tokenSubject) {
+        storeService.checkOpenForOrders(); // no new orders while the shop is under maintenance
         Order order = new Order();
         order.setOrderNumber(newOrderNumber());
         // Logged in? Save the order to their account. Guest? user stays empty.

@@ -36,7 +36,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/health", "/error").permitAll() // /error = Spring's built-in error reply
                 // Anyone can LOOK at the catalog and product photos
-                .requestMatchers(HttpMethod.GET, "/api/home", "/api/delivery", "/api/categories/**", "/api/products/**", "/uploads/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/home", "/api/delivery", "/api/store/status", "/api/categories/**", "/api/products/**", "/uploads/**").permitAll()
                 // Guests can place an order and see its confirmation (by its hard-to-guess number)
                 .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/orders/*").permitAll()

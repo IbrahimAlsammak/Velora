@@ -45,6 +45,9 @@ export function uploadPhoto(file) {
   return data(api.post('/admin/uploads', body)).then((d) => d.url)
 }
 
+// Maintenance: true = close the shop ("back soon" page), false = open it again
+export const setMaintenance = (maintenance) => data(api.put('/admin/store/maintenance', { maintenance }))
+
 // Delivery fees (per city)
 export const updateDelivery = (otherCitiesFee, freeDeliveryOver) =>
   data(api.put('/admin/delivery', { otherCitiesFee, freeDeliveryOver }))

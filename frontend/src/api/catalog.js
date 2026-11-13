@@ -14,6 +14,12 @@ export async function getDelivery() {
   return res.data
 }
 
+/** Is the shop open, or closed for maintenance? */
+export async function getStoreStatus() {
+  const res = await api.get('/store/status')
+  return res.data
+}
+
 export async function getCategories() {
   const res = await api.get('/categories')
   return res.data

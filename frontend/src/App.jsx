@@ -1,6 +1,8 @@
-import { Outlet, Route, Routes } from 'react-router-dom'
+import { Link, Outlet, Route, Routes, useLocation } from 'react-router-dom'
+import { getStoreStatus } from './api/catalog.js'
 import AddedToBag from './components/AddedToBag.jsx'
 import Footer from './components/Footer.jsx'
+import MaintenancePage from './components/MaintenancePage.jsx'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 import RequireAdmin from './components/admin/RequireAdmin.jsx'
 import Navbar from './components/Navbar.jsx'
@@ -32,6 +34,8 @@ import OrderConfirmation from './pages/OrderConfirmation.jsx'
 import ProductPage from './pages/ProductPage.jsx'
 import Register from './pages/Register.jsx'
 import Shop from './pages/Shop.jsx'
+import { useAuth } from './context/useAuth.js'
+import useLoad from './hooks/useLoad.js'
 
 /** The "map" of the website: which page shows at which address. */
 export default function App() {
@@ -81,10 +85,28 @@ export default function App() {
   )
 }
 
-/** Top bar + page + footer, used by all shop pages. */
+/**
+ * Top bar + page + footer, used by all shop pages.
+ * While the shop is under maintenance, customers see the "back soon" page instead.
+ * You (admin) still see the shop, with a reminder bar on top.
+ */
 function ShopLayout() {
+  const { pathname } = useLocation()
+  const { isAdmin } = useAuth()
+  // Check again on every page change, so customers notice quickly when you close/open the shop
+  const { data: status, error, reload } = useLoad(getStoreStatus, [pathname])
+
+  if (!status && !error) return null // first check still running (a split second)
+  if (status?.maintenance && !isAdmin) return <MaintenancePage onCheckAgain={reload} />
+
   return (
     <div className="min-h-screen flex flex-col">
+      {status?.maintenance && (
+        <div className="bg-red-700 px-4 py-2 text-center text-sm text-white">
+          ⚠️ Maintenance mode is ON - customers see the &quot;back soon&quot; page. Only you can see the shop.{' '}
+          <Link to="/admin" className="font-medium underline">Open it in the admin panel</Link>
+        </div>
+      )}
       <Navbar />
       <main className="flex-1">
         <Outlet />

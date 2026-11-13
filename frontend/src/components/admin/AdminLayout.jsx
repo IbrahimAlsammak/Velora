@@ -1,7 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { setMaintenance } from '../../api/admin.js'
+import { getStoreStatus } from '../../api/catalog.js'
+import { errorMessage } from '../../api/client.js'
 import logo from '../../assets/velora-logo.svg'
 import { useAuth } from '../../context/useAuth.js'
+import useLoad from '../../hooks/useLoad.js'
+import formatDate from '../../utils/formatDate.js'
 
 const LINKS = [
   { to: '/admin', label: 'Dashboard', icon: '◫', end: true },
@@ -18,6 +23,7 @@ const LINKS = [
 export default function AdminLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const shop = useShopSwitch()
 
   // Browser tab says "Velora Admin" while you're in the admin panel
   useEffect(() => {
@@ -41,6 +47,8 @@ export default function AdminLayout() {
           <p className="text-xs uppercase tracking-[0.25em] text-gold md:mt-2">Admin</p>
         </div>
 
+        <ShopSwitch shop={shop} />
+
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:overflow-visible">
           {LINKS.map((l) => (
             <NavLink key={l.to} to={l.to} end={l.end} className={linkClass}>
@@ -62,6 +70,19 @@ export default function AdminLayout() {
       </aside>
 
       <main className="flex-1 px-4 py-6 md:px-10 md:py-10">
+        {/* Big red reminder on every admin page while the shop is closed */}
+        {shop.closed && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-red-700 px-5 py-3 text-white">
+            <p className="text-sm">
+              <span className="font-semibold">⚠️ Shop is closed (maintenance)</span>
+              {shop.since && <> since {formatDate(shop.since)}</>} - customers see the &quot;back soon&quot; page and can&apos;t order.
+            </p>
+            <button type="button" onClick={shop.toggle} disabled={shop.saving}
+              className="rounded-full bg-white px-5 py-2 text-xs font-medium uppercase tracking-[0.15em] text-red-700 hover:bg-cream disabled:opacity-60">
+              Open the shop
+            </button>
+          </div>
+        )}
         {/* The current admin page appears here */}
         <Outlet />
 
@@ -70,6 +91,52 @@ export default function AdminLayout() {
           <button type="button" className="underline" onClick={() => { logout(); navigate('/admin/login') }}>Log out</button>
         </div>
       </main>
+    </div>
+  )
+}
+
+/** Loads the shop status and switches maintenance on/off (asks first). */
+function useShopSwitch() {
+  const { data, reload } = useLoad(getStoreStatus)
+  const [saving, setSaving] = useState(false)
+  const closed = Boolean(data?.maintenance)
+
+  async function toggle() {
+    const question = closed
+      ? 'Open the shop again? Customers can browse and order straight away.'
+      : 'Close the shop for maintenance?\n\n' +
+        'Customers will see a "We\'ll be back soon" page and can\'t place orders. ' +
+        'Their bags are kept. You can still use the admin panel and see the shop.'
+    if (!window.confirm(question)) return
+    setSaving(true)
+    try {
+      await setMaintenance(!closed)
+      reload()
+    } catch (err) {
+      window.alert(errorMessage(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return { loaded: Boolean(data), closed, since: data?.maintenanceSince, saving, toggle }
+}
+
+/** The on/off switch in the sidebar: "Shop: Open / Closed". */
+function ShopSwitch({ shop }) {
+  if (!shop.loaded) return null
+  return (
+    <div className="mx-3 mb-3 flex items-center justify-between gap-3 rounded-lg border border-gold-light/70 bg-white px-3 py-2.5">
+      <div className="text-sm">
+        <p className="text-xs uppercase tracking-wider text-mulberry/60">Shop</p>
+        <p className={`font-medium ${shop.closed ? 'text-red-700' : 'text-green-800'}`}>
+          {shop.closed ? '● Closed (maintenance)' : '● Open'}
+        </p>
+      </div>
+      <button type="button" role="switch" aria-checked={!shop.closed} aria-label="Shop open" onClick={shop.toggle} disabled={shop.saving}
+        className={`relative h-6 w-11 shrink-0 rounded-full transition disabled:opacity-60 ${shop.closed ? 'bg-red-700' : 'bg-green-700'}`}>
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${shop.closed ? 'left-0.5' : 'left-[22px]'}`} />
+      </button>
     </div>
   )
 }
