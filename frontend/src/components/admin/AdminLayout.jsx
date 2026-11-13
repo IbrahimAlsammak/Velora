@@ -25,7 +25,7 @@ export default function AdminLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const shop = useShopSwitch()
-  const pending = useOrderAlerts() // how many orders are waiting (red number)
+  const { pending, refresh: refreshPending } = useOrderAlerts() // how many orders are waiting (red number)
 
   // Browser tab says "Velora Admin" while you're in the admin panel
   useEffect(() => {
@@ -97,8 +97,9 @@ export default function AdminLayout() {
           </div>
         )}
         {/* The current admin page appears here */}
-        {/* pending is passed to the pages, so Dashboard and Orders reload when a new order arrives */}
-        <Outlet context={{ pending }} />
+        {/* passed to the pages: Dashboard and Orders reload when "pending" changes,
+            and the order page calls refreshPending() right after you change a status */}
+        <Outlet context={{ pending, refreshPending }} />
 
         <div className="mt-12 flex gap-4 border-t border-gold-light/60 pt-4 text-sm md:hidden">
           <a href="/" target="_blank" rel="noreferrer" className="text-gold">View shop ↗</a>

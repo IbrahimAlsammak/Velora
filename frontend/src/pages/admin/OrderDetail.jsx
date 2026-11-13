@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { changeOrderStatus, deleteOrder, getAdminOrder } from '../../api/admin.js'
 import { errorMessage } from '../../api/client.js'
 import { Button, Card, ErrorBox, Loading, PageHeader, StatusBadge } from '../../components/admin/ui.jsx'
@@ -49,6 +49,7 @@ export default function OrderDetail() {
   const { orderNumber } = useParams()
   const navigate = useNavigate()
   const { data, error, loading } = useLoad(() => getAdminOrder(orderNumber), [orderNumber])
+  const { refreshPending } = useOutletContext() ?? {} // updates the red number straight away
   const [updated, setUpdated] = useState(null) // the order after a status change
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState(null)
@@ -67,6 +68,7 @@ export default function OrderDetail() {
     setActionError(null)
     try {
       setUpdated(await changeOrderStatus(orderNumber, status))
+      refreshPending?.()
     } catch (err) {
       setActionError(errorMessage(err))
     } finally {
@@ -80,6 +82,7 @@ export default function OrderDetail() {
     setActionError(null)
     try {
       await deleteOrder(orderNumber)
+      refreshPending?.()
       navigate('/admin/orders')
     } catch (err) {
       setActionError(errorMessage(err))
