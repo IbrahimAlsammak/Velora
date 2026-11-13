@@ -45,7 +45,7 @@ export default function AdminLayout() {
       <aside className="border-b border-gold-light/60 bg-white/70 md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:border-b-0 md:border-r">
         <div className="flex items-center justify-between px-4 py-4 md:block">
           <Link to="/admin"><img src={logo} alt="Velora" className="h-10" /></Link>
-          <p className="min-w-0 truncate text-xs text-gold md:mt-2" title={user?.email}>{user?.email}</p>
+          <p className="min-w-0 truncate text-sm font-medium text-gold md:mt-2">{user?.fullName}</p>
         </div>
 
         <ShopSwitch shop={shop} />
@@ -62,8 +62,7 @@ export default function AdminLayout() {
 
         <div className="hidden shrink-0 border-t border-gold-light/60 px-4 py-4 text-sm md:block">
           <a href="/" target="_blank" rel="noreferrer" className="block text-gold hover:underline">View shop ↗</a>
-          <p className="mt-3 font-medium text-mulberry">{user?.fullName}</p>
-          <button type="button" className="mt-1 text-mulberry underline hover:text-red-700"
+          <button type="button" className="mt-3 text-mulberry underline hover:text-red-700"
             onClick={() => { logout(); navigate('/admin/login') }}>
             Log out
           </button>
