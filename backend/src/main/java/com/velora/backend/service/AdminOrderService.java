@@ -82,8 +82,18 @@ public class AdminOrderService {
                 if (item.getProduct() == null) {
                     continue; // product was deleted - no stock to put back
                 }
-                productRepository.findByIdForUpdate(item.getProduct().getId())
-                        .ifPresent(p -> p.setStock(p.getStock() + item.getQuantity()));
+                productRepository.findByIdForUpdate(item.getProduct().getId()).ifPresent(p -> {
+                    // back to the same colour + size it was taken from
+                    p.findVariant(item.getColor(), item.getSize()).ifPresentOrElse(
+                            v -> {
+                                v.setStock(v.getStock() + item.getQuantity());
+                                p.recountStock();
+                            },
+                            () -> {
+                                if (!p.hasOptions()) p.setStock(p.getStock() + item.getQuantity());
+                                // (colour/size was removed from the product since - nowhere to put it back)
+                            });
+                });
             }
         }
         order.setStatus(newStatus);

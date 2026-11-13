@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.velora.backend.entity.Category;
 import com.velora.backend.entity.Product;
 import com.velora.backend.entity.ProductColor;
+import com.velora.backend.entity.VariantStock;
 import com.velora.backend.repository.CategoryRepository;
 import com.velora.backend.repository.ProductRepository;
 import com.velora.backend.util.Slugs;
@@ -112,6 +113,15 @@ public class DataSeeder implements CommandLineRunner {
     private void applyOptions(Product p, Sample s) {
         s.colors().forEach(c -> p.getColors().add(color(c.getName(), c.getHex())));
         p.getSizes().addAll(s.sizes());
+        // Stock per colour + size: spread the sample stock evenly over all combinations
+        if (p.hasOptions()) {
+            List<String[]> combos = p.combinations();
+            for (int i = 0; i < combos.size(); i++) {
+                int share = s.stock() / combos.size() + (i < s.stock() % combos.size() ? 1 : 0);
+                p.getVariants().add(new VariantStock(combos.get(i)[0], combos.get(i)[1], share));
+            }
+            p.recountStock();
+        }
     }
 
     private static ProductColor color(String name, String hex) {

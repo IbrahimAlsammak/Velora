@@ -71,13 +71,15 @@ public final class AdminDtos {
     public record AdminProduct(Long id, String name, String slug, String description, BigDecimal price,
                                int stock, boolean active, boolean featured, String imageUrl, List<String> images,
                                Long categoryId, String categoryName,
-                               List<ProductDetailDto.ColorDto> colors, List<String> sizes) {
+                               List<ProductDetailDto.ColorDto> colors, List<String> sizes,
+                               List<ProductDetailDto.VariantDto> variants) {
         public static AdminProduct from(Product p) {
             return new AdminProduct(p.getId(), p.getName(), p.getSlug(), p.getDescription(), p.getPrice(),
                     p.getStock(), p.isActive(), p.isFeatured(), p.getImageUrl(), p.getAllImages(),
                     p.getCategory().getId(), p.getCategory().getName(),
                     p.getColors().stream().map(c -> new ProductDetailDto.ColorDto(c.getName(), c.getHex())).toList(),
-                    List.copyOf(p.getSizes()));
+                    List.copyOf(p.getSizes()),
+                    ProductDetailDto.variantsOf(p));
         }
     }
 
@@ -93,7 +95,15 @@ public final class AdminDtos {
             boolean featured,
             @Size(max = 10, message = "Up to 10 photos per product") List<@Size(max = 255) String> images, // first = main photo
             @Size(max = 20) List<@Valid ColorForm> colors,
-            @Size(max = 20) List<@NotBlank @Size(max = 20) String> sizes) {}
+            @Size(max = 20) List<@NotBlank @Size(max = 20) String> sizes,
+            // stock per colour + size (only used when the product has colours or sizes)
+            @Size(max = 400) List<@Valid VariantForm> variants) {}
+
+    /** Stock of one colour + size, typed in the admin product form. */
+    public record VariantForm(
+            @Size(max = 40) String color,
+            @Size(max = 20) String size,
+            @Min(value = 0, message = "Stock can't be negative") @Max(100000) int stock) {}
 
     public record ColorForm(
             @NotBlank(message = "Colour name is required") @Size(max = 40) String name,

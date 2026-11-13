@@ -63,6 +63,12 @@ export default function Products() {
                   <td className="px-5 py-3 text-right">{formatPrice(p.price)}</td>
                   <td className={`px-5 py-3 text-right font-medium ${p.stock === 0 ? 'text-red-700' : p.stock <= 5 ? 'text-amber-700' : ''}`}>
                     {p.stock}
+                    {/* e.g. "2 sold out" = 2 colour/size combinations at 0 (while others are still in stock) */}
+                    {p.stock > 0 && p.variants?.some((v) => v.stock === 0) && (
+                      <span className="block text-xs font-normal text-red-700">
+                        {p.variants.filter((v) => v.stock === 0).length} sold out
+                      </span>
+                    )}
                   </td>
                   <td className="px-5 py-3">{p.active ? 'Visible' : 'Hidden'}</td>
                   <td className="px-5 py-3 text-right">

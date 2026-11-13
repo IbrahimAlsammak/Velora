@@ -11,10 +11,12 @@ import com.velora.backend.dto.AdminDtos.AdminCategory;
 import com.velora.backend.dto.AdminDtos.AdminProduct;
 import com.velora.backend.dto.AdminDtos.CategoryForm;
 import com.velora.backend.dto.AdminDtos.ProductForm;
+import com.velora.backend.dto.AdminDtos.VariantForm;
 import com.velora.backend.entity.Category;
 import com.velora.backend.entity.OrderStatus;
 import com.velora.backend.entity.Product;
 import com.velora.backend.entity.ProductColor;
+import com.velora.backend.entity.VariantStock;
 import com.velora.backend.repository.CategoryRepository;
 import com.velora.backend.repository.OrderRepository;
 import com.velora.backend.repository.ProductRepository;
@@ -84,7 +86,6 @@ public class AdminCatalogService {
         p.setName(form.name().trim());
         p.setDescription(blankToNull(form.description()));
         p.setPrice(form.price());
-        p.setStock(form.stock());
         p.setCategory(findCategory(form.categoryId()));
         p.setActive(form.active());
         p.setFeatured(form.featured());
@@ -104,6 +105,25 @@ public class AdminCatalogService {
         if (form.sizes() != null) {
             form.sizes().stream().map(String::trim).distinct().forEach(p.getSizes()::add);
         }
+
+        // Stock: one number for simple products, or one number per colour + size
+        p.getVariants().clear();
+        if (p.hasOptions()) {
+            for (String[] combo : p.combinations()) {
+                int stock = form.variants() == null ? 0 : form.variants().stream()
+                        .filter(v -> same(v.color(), combo[0]) && same(v.size(), combo[1]))
+                        .mapToInt(VariantForm::stock).findFirst().orElse(0);
+                p.getVariants().add(new VariantStock(combo[0], combo[1], stock));
+            }
+            p.recountStock(); // total = sum of all combinations
+        } else {
+            p.setStock(form.stock());
+        }
+    }
+
+    /** Same colour/size name? (empty and missing count as the same) */
+    private static boolean same(String a, String b) {
+        return java.util.Objects.equals(blankToNull(a == null ? null : a.trim()), b);
     }
 
     private Product findProduct(Long id) {

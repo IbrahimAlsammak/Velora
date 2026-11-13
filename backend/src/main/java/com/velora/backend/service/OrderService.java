@@ -21,6 +21,7 @@ import com.velora.backend.entity.Order;
 import com.velora.backend.entity.OrderItem;
 import com.velora.backend.entity.PaymentMethod;
 import com.velora.backend.entity.Product;
+import com.velora.backend.entity.VariantStock;
 import com.velora.backend.notify.NewOrderEvent;
 import com.velora.backend.repository.OrderRepository;
 import com.velora.backend.repository.ProductRepository;
@@ -95,13 +96,22 @@ public class OrderService {
             String color = checkColor(product, line.color());
             String size = checkSize(product, line.size());
 
-            if (product.getStock() < line.quantity()) {
-                String msg = product.getStock() == 0
-                        ? product.getName() + " is sold out."
-                        : "Only " + product.getStock() + " left of " + product.getName() + ".";
+            // Products with colours/sizes: check the stock of THIS colour + size only
+            VariantStock variant = product.hasOptions()
+                    ? product.findVariant(color, size).orElse(new VariantStock(color, size, 0))
+                    : null;
+            int available = variant != null ? variant.getStock() : product.getStock();
+            if (available < line.quantity()) {
+                String what = product.getName() + optionsText(color, size);
+                String msg = available == 0 ? what + " is sold out." : "Only " + available + " left of " + what + ".";
                 throw new ResponseStatusException(HttpStatus.CONFLICT, msg);
             }
-            product.setStock(product.getStock() - line.quantity()); // saved automatically
+            if (variant != null) {
+                variant.setStock(variant.getStock() - line.quantity());
+                product.recountStock();
+            } else {
+                product.setStock(product.getStock() - line.quantity());
+            } // saved automatically
 
             BigDecimal lineTotal = product.getPrice().multiply(BigDecimal.valueOf(line.quantity()));
             subtotal = subtotal.add(lineTotal);
@@ -168,6 +178,12 @@ public class OrderService {
     // ---------- helpers ----------
 
     /** The colour must be one this product really has (or none, if it has no colours). */
+    /** " (Black, M)" - or nothing for a product without colour/size. */
+    private static String optionsText(String color, String size) {
+        String options = Stream.of(color, size).filter(x -> x != null).collect(Collectors.joining(", "));
+        return options.isEmpty() ? "" : " (" + options + ")";
+    }
+
     private String checkColor(Product product, String color) {
         if (product.getColors().isEmpty()) return null;
         return product.getColors().stream()

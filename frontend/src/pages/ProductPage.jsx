@@ -6,6 +6,7 @@ import ProductImage from '../components/ProductImage.jsx'
 import QuantityPicker from '../components/QuantityPicker.jsx'
 import { useCart } from '../context/useCart.js'
 import formatPrice from '../utils/formatPrice.js'
+import { colorAvailable, sizeAvailable, stockOf } from '../utils/variantStock.js'
 
 export default function ProductPage() {
   const { slug } = useParams() // the part after /product/ in the address
@@ -55,13 +56,27 @@ function ProductDetails({ product, related }) {
 
   const needsColor = product.colors.length > 0 && !color
   const needsSize = product.sizes.length > 0 && !size
+  // Pieces left of the chosen colour + size (only known once both are chosen)
+  const chosenStock = needsColor || needsSize ? null : stockOf(product, color, size)
+  const maxQuantity = Math.min(10, chosenStock ?? 10)
+
+  function chooseColor(name) {
+    setColor(name)
+    if (size && !sizeAvailable(product, size, name)) setSize(null) // that size isn't left in this colour
+    setQuantity(1)
+  }
+
+  function chooseSize(s) {
+    setSize(s)
+    setQuantity(1)
+  }
 
   function handleAdd() {
     if (needsColor || needsSize) {
       setShowHint(true)
       return
     }
-    addItem(product, { color, size, quantity }) // also opens the "Added to your bag" popup
+    addItem(product, { color, size, quantity: Math.min(quantity, maxQuantity) }) // also opens the "Added to your bag" popup
     // Back to the shop - the same category they were browsing, if they came from the shop
     const from = location.state?.from
     navigate(from?.startsWith('/shop') ? from : '/shop')
@@ -100,19 +115,26 @@ function ProductDetails({ product, related }) {
                 Colour: <span className="text-gold normal-case tracking-normal">{color ?? 'choose one'}</span>
               </p>
               <div className="mt-3 flex flex-wrap gap-3">
-                {product.colors.map((c) => (
-                  <button
-                    key={c.name}
-                    type="button"
-                    title={c.name}
-                    aria-label={c.name}
-                    onClick={() => setColor(c.name)}
-                    className={`h-9 w-9 rounded-full border border-mulberry/20 ring-offset-2 ring-offset-cream transition ${
-                      color === c.name ? 'ring-2 ring-mulberry' : 'hover:ring-2 hover:ring-gold-light'
-                    }`}
-                    style={{ backgroundColor: c.hex }}
-                  />
-                ))}
+                {product.colors.map((c) => {
+                  const available = colorAvailable(product, c.name, size)
+                  return (
+                    <button
+                      key={c.name}
+                      type="button"
+                      title={available ? c.name : `${c.name} - sold out`}
+                      aria-label={available ? c.name : `${c.name}, sold out`}
+                      disabled={!available}
+                      onClick={() => chooseColor(c.name)}
+                      className={`relative h-9 w-9 overflow-hidden rounded-full border border-mulberry/20 ring-offset-2 ring-offset-cream transition disabled:opacity-40 ${
+                        color === c.name ? 'ring-2 ring-mulberry' : available ? 'hover:ring-2 hover:ring-gold-light' : ''
+                      }`}
+                      style={{ backgroundColor: c.hex }}
+                    >
+                      {/* sold out = a line across the circle */}
+                      {!available && <span className="absolute left-1/2 top-[-20%] h-[140%] w-0.5 -translate-x-1/2 rotate-45 bg-mulberry" />}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -126,25 +148,30 @@ function ProductDetails({ product, related }) {
             </p>
             {product.sizes.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
-                {product.sizes.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSize(s)}
-                    className={`min-w-12 rounded-full border px-4 py-2 text-sm transition ${
-                      size === s ? 'border-mulberry bg-mulberry text-cream' : 'border-gold-light hover:border-gold'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
+                {product.sizes.map((s) => {
+                  const available = sizeAvailable(product, s, color)
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      disabled={!available}
+                      title={available ? undefined : 'Sold out'}
+                      onClick={() => chooseSize(s)}
+                      className={`min-w-12 rounded-full border px-4 py-2 text-sm transition disabled:border-gold-light/60 disabled:text-mulberry/35 disabled:line-through ${
+                        size === s ? 'border-mulberry bg-mulberry text-cream' : 'border-gold-light hover:border-gold'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
 
           {/* Quantity + Add to bag */}
           <div className="mt-8 flex flex-wrap items-center gap-4">
-            <QuantityPicker value={quantity} onChange={setQuantity} />
+            <QuantityPicker value={Math.min(quantity, maxQuantity)} onChange={setQuantity} max={maxQuantity} />
 
             <button
               type="button"
@@ -156,6 +183,9 @@ function ProductDetails({ product, related }) {
             </button>
           </div>
 
+          {chosenStock !== null && chosenStock <= 3 && chosenStock > 0 && (
+            <p className="mt-3 text-sm text-amber-700">Only {chosenStock} left in this {product.sizes.length && product.colors.length ? 'colour and size' : product.colors.length ? 'colour' : 'size'}.</p>
+          )}
           {showHint && (
             <p className="mt-3 text-sm text-red-700">
               Please choose {needsColor && needsSize ? 'a colour and a size' : needsColor ? 'a colour' : 'a size'}.

@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -63,9 +65,22 @@ public class Product {
         return imageUrl == null ? List.of() : List.of(imageUrl);
     }
 
-    /** How many pieces are in stock. */
+    /**
+     * How many pieces are in stock IN TOTAL.
+     * For products with colours/sizes this is the sum of all combinations in "variants"
+     * (kept up to date automatically), so "Sold out" etc. keep working the same way.
+     */
     @Column(nullable = false)
     private int stock;
+
+    /**
+     * Stock per colour + size, e.g. Black/M = 3, Black/L = 0, Navy/M = 2.
+     * Empty for products without colours or sizes (they only use "stock").
+     */
+    @ElementCollection
+    @CollectionTable(name = "product_variant_stock", joinColumns = @JoinColumn(name = "product_id"))
+    @OrderColumn(name = "position")
+    private List<VariantStock> variants = new ArrayList<>();
 
     /**
      * Visible in the shop? false = hidden (kept for old orders, but customers can't see or buy it).
@@ -98,6 +113,54 @@ public class Product {
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
+
+    /** Does this product have colour and/or size choices? (then stock is counted per combination) */
+    public boolean hasOptions() {
+        return !colors.isEmpty() || !sizes.isEmpty();
+    }
+
+    /** The stock row of one colour + size (empty colour/size = "no choice"). */
+    public Optional<VariantStock> findVariant(String color, String size) {
+        return variants.stream()
+                .filter(v -> Objects.equals(v.getColor(), color) && Objects.equals(v.getSize(), size))
+                .findFirst();
+    }
+
+    /** Every colour + size combination, e.g. [Black,M] [Black,L] [Navy,M] [Navy,L]. */
+    public List<String[]> combinations() {
+        List<String> colorNames = colors.isEmpty() ? java.util.Collections.singletonList(null)
+                : colors.stream().map(ProductColor::getName).toList();
+        List<String> sizeNames = sizes.isEmpty() ? java.util.Collections.singletonList(null) : sizes;
+        List<String[]> result = new ArrayList<>();
+        for (String c : colorNames) {
+            for (String s : sizeNames) {
+                result.add(new String[] {c, s});
+            }
+        }
+        return result;
+    }
+
+    /** Total stock = sum of all combinations (only for products with colours/sizes). */
+    public void recountStock() {
+        if (hasOptions()) {
+            stock = variants.stream().mapToInt(VariantStock::getStock).sum();
+        }
+    }
+
+    /**
+     * Creates the stock rows for every combination: the first one gets "firstStock" pieces, the others 0.
+     * Used once for products made before stock-per-combination existed.
+     */
+    public void createVariants(int firstStock) {
+        variants.clear();
+        if (!hasOptions()) return;
+        boolean first = true;
+        for (String[] combo : combinations()) {
+            variants.add(new VariantStock(combo[0], combo[1], first ? firstStock : 0));
+            first = false;
+        }
+        recountStock();
+    }
 
     /** Runs automatically just before a new product is saved. */
     @PrePersist

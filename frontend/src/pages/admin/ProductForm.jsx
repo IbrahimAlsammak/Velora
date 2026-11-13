@@ -16,8 +16,11 @@ const COMMON_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
 
 const EMPTY_PRODUCT = {
   name: '', description: '', price: '', stock: 0, categoryId: '', active: true, featured: false,
-  images: [], colors: [], sizes: [],
+  images: [], colors: [], sizes: [], variants: [],
 }
+
+/** Key of one colour + size in the stock grid, e.g. "Black|M" ("" = no colour / no size). */
+const cellKey = (color, size) => `${color ?? ''}|${size ?? ''}`
 
 /** /admin/products/new = add a product,  /admin/products/7 = edit product 7 */
 export default function ProductForm() {
@@ -42,6 +45,9 @@ function Editor({ initial, id, categories }) {
     images: initial.images ?? [], // all photos, first = main
     categoryId: initial.categoryId ?? '',
   })
+  // Stock per colour + size: { "Black|M": 3, "Navy|L": 0, ... }
+  const [cells, setCells] = useState(() =>
+    Object.fromEntries((initial.variants ?? []).map((v) => [cellKey(v.color, v.size), v.stock])))
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -106,6 +112,14 @@ function Editor({ initial, id, categories }) {
     setCustomSize('')
   }
 
+  // ---------- Stock per colour + size ----------
+  const hasOptions = form.colors.length > 0 || form.sizes.length > 0
+  const gridColors = form.colors.length ? form.colors.map((c) => c.name.trim()) : [null] // one row if no colours
+  const gridSizes = form.sizes.length ? form.sizes : [null] // one column if no sizes
+  const cellValue = (color, size) => cells[cellKey(color, size)] ?? 0
+  const setCell = (color, size, value) => setCells((c) => ({ ...c, [cellKey(color, size)]: value }))
+  const totalStock = gridColors.reduce((sum, c) => sum + gridSizes.reduce((t, sz) => t + (Number(cellValue(c, sz)) || 0), 0), 0)
+
   // ---------- Save / delete ----------
   async function handleSave(e) {
     e.preventDefault()
@@ -115,7 +129,10 @@ function Editor({ initial, id, categories }) {
     const body = {
       ...form,
       price: form.price === '' ? null : Number(form.price),
-      stock: Number(form.stock) || 0,
+      stock: hasOptions ? totalStock : Number(form.stock) || 0,
+      variants: hasOptions
+        ? gridColors.flatMap((c) => gridSizes.map((sz) => ({ color: c, size: sz, stock: Number(cellValue(c, sz)) || 0 })))
+        : [],
       categoryId: form.categoryId === '' ? null : Number(form.categoryId),
     }
     try {
@@ -173,11 +190,17 @@ function Editor({ initial, id, categories }) {
               <input className={inputClass} type="number" min="0" step="0.01" placeholder="49.99"
                 value={form.price} onChange={(e) => set('price', e.target.value)} />
             </Field>
-            <Field label="Stock (pieces available)" error={fieldErrors.stock}
-              hint="Goes down automatically when someone orders">
-              <input className={inputClass} type="number" min="0" step="1"
-                value={form.stock} onChange={(e) => set('stock', e.target.value)} />
-            </Field>
+            {hasOptions ? (
+              <Field label="Stock (pieces available)" hint="Set per colour and size below">
+                <p className="py-2 text-lg font-medium">{totalStock} <span className="text-sm font-normal text-mulberry/60">in total</span></p>
+              </Field>
+            ) : (
+              <Field label="Stock (pieces available)" error={fieldErrors.stock}
+                hint="Goes down automatically when someone orders">
+                <input className={inputClass} type="number" min="0" step="1"
+                  value={form.stock} onChange={(e) => set('stock', e.target.value)} />
+              </Field>
+            )}
             <Field label="Description" error={fieldErrors.description} className="sm:col-span-2">
               <textarea className={inputClass} rows={4} value={form.description}
                 onChange={(e) => set('description', e.target.value)} />
@@ -229,6 +252,58 @@ function Editor({ initial, id, categories }) {
               <Button variant="secondary" onClick={addCustomSize}>Add</Button>
             </div>
           </Card>
+
+          {/* Stock per colour + size */}
+          {hasOptions && (
+            <Card>
+              <div className="flex items-baseline justify-between">
+                <h2 className="font-display text-xl">Stock per {form.colors.length && form.sizes.length ? 'colour & size' : form.colors.length ? 'colour' : 'size'}</h2>
+                <span className="text-sm text-mulberry/60">Total: <strong className="text-mulberry">{totalStock}</strong></span>
+              </div>
+              <p className="text-xs text-mulberry/50">
+                How many pieces you have of each. 0 = sold out (crossed out in the shop). Goes down automatically when someone orders.
+              </p>
+              <div className="mt-3 overflow-x-auto">
+                <table className="text-sm">
+                  {form.sizes.length > 0 && (
+                    <thead>
+                      <tr>
+                        <th />
+                        {gridSizes.map((sz) => <th key={sz} className="px-1 pb-1 text-center font-medium">{sz}</th>)}
+                      </tr>
+                    </thead>
+                  )}
+                  <tbody>
+                    {gridColors.map((c, row) => (
+                      <tr key={row}>
+                        <td className="whitespace-nowrap py-1 pr-3">
+                          {form.colors.length > 0 ? (
+                            <span className="flex items-center gap-2">
+                              <span className="h-4 w-4 rounded-full border border-mulberry/20" style={{ backgroundColor: form.colors[row].hex }} />
+                              {c || <em className="text-mulberry/40">no name</em>}
+                            </span>
+                          ) : 'Stock'}
+                        </td>
+                        {gridSizes.map((sz) => {
+                          const value = cellValue(c, sz)
+                          return (
+                            <td key={sz} className="px-1 py-1">
+                              <input type="number" min="0" step="1" aria-label={`Stock ${c ?? ''} ${sz ?? ''}`}
+                                value={value} onChange={(e) => setCell(c, sz, e.target.value)}
+                                className={`${inputClass} w-16 text-center ${Number(value) === 0 ? 'bg-red-50 text-red-700' : ''}`} />
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {form.colors.length > 0 && (
+                <p className="mt-2 text-xs text-mulberry/50">Tip: if you rename a colour, type its stock again.</p>
+              )}
+            </Card>
+          )}
         </div>
 
         {/* Right column: photo + visibility + save */}
