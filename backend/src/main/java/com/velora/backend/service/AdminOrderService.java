@@ -79,6 +79,9 @@ public class AdminOrderService {
         }
         if (newStatus == OrderStatus.CANCELLED) {
             for (OrderItem item : order.getItems()) {
+                if (item.getProduct() == null) {
+                    continue; // product was deleted - no stock to put back
+                }
                 productRepository.findByIdForUpdate(item.getProduct().getId())
                         .ifPresent(p -> p.setStock(p.getStock() + item.getQuantity()));
             }

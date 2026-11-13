@@ -53,6 +53,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("select coalesce(sum(o.total), 0) from Order o where o.status in (com.velora.backend.entity.OrderStatus.SHIPPED, com.velora.backend.entity.OrderStatus.DELIVERED)")
     BigDecimal totalSales();
 
-    /** Has this product ever been ordered? (then it can't be deleted, only hidden) */
-    boolean existsByItemsProductId(Long productId);
+    /** Before deleting a product: past orders keep their copy of it, but lose the link. */
+    @Modifying
+    @Query("update OrderItem i set i.product = null where i.product.id = :productId")
+    void unlinkOrderItemsFromProduct(@Param("productId") Long productId);
 }

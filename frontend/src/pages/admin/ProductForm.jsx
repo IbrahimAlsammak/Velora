@@ -130,7 +130,9 @@ function Editor({ initial, id, categories }) {
   }
 
   async function handleDelete() {
-    if (!window.confirm(`Delete "${initial.name}" for good?`)) return
+    const question = `Delete "${initial.name}" for good?\n\n` +
+      'It disappears from the shop and from this list. Past orders that include it stay as they are.'
+    if (!window.confirm(question)) return
     setBusy(true)
     setError(null)
     try {
@@ -238,7 +240,7 @@ function Editor({ initial, id, categories }) {
             </div>
 
             {/* Main photo, big */}
-            <div className="mt-3 aspect-[3/4] overflow-hidden rounded-xl">
+            <div className="mt-3 aspect-3/4 overflow-hidden rounded-xl">
               <ProductImage product={{ name: form.name || '?', imageUrl: form.images[0] }} letterClass="text-6xl" />
             </div>
 
@@ -247,7 +249,7 @@ function Editor({ initial, id, categories }) {
               <ul className="mt-3 grid grid-cols-3 gap-2">
                 {form.images.map((url, i) => (
                   <li key={url} className={`overflow-hidden rounded-lg border-2 ${i === 0 ? 'border-mulberry' : 'border-gold-light'}`}>
-                    <div className="relative aspect-[3/4]">
+                    <div className="relative aspect-3/4">
                       <img src={url} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
                       {i === 0 && (
                         <span className="absolute left-1 top-1 rounded bg-mulberry px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-cream">Main</span>

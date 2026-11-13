@@ -61,14 +61,12 @@ public class AdminCatalogService {
         return AdminProduct.from(p);
     }
 
-    /** Products that were already ordered can't be deleted (old orders point to them) - hide them instead. */
+    /** Delete a product for good. Past orders keep their own copy of it (name, colour, size, price). */
     @Transactional
     public void deleteProduct(Long id) {
         Product p = findProduct(id);
-        if (orderRepository.existsByItemsProductId(id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "This product is in past orders, so it can't be deleted. Untick \"Visible in shop\" to hide it instead.");
-        }
+        // Past orders keep the product's name, colour, size and price - only the link is removed
+        orderRepository.unlinkOrderItemsFromProduct(id);
         productRepository.delete(p);
     }
 

@@ -35,8 +35,12 @@ public class OrderItem {
     @JoinColumn(name = "order_id")
     private Order order;
 
-    /** Link to the product (kept for reference / reports). */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    /**
+     * Link to the product (for putting stock back when an order is cancelled).
+     * Empty if the product was deleted later - the order still keeps its own copy of
+     * the name, colour, size and price below, so it always shows correctly.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;
 

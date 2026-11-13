@@ -33,5 +33,8 @@ public class SchemaUpdates implements CommandLineRunner {
             // nothing to do
         }
         jdbc.execute("DROP TABLE IF EXISTS delivery_region_fees");
+
+        // Products can now be deleted even if they were ordered - old order lines then lose the link
+        jdbc.execute("ALTER TABLE order_items MODIFY product_id BIGINT NULL");
     }
 }
