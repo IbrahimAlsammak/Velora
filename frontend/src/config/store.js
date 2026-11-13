@@ -24,7 +24,7 @@ export const STORE = {
   // Home page banner text
   heroEyebrow: 'The new collection',
   heroTitle: 'Modesty, beautifully made',
-  heroText: 'Hijabs, abayas, dresses, makeup sets and small bags - chosen for comfort, beauty and quiet elegance, every day.',
+  heroText: 'Dresses, makeup and small bags - chosen for comfort, beauty and quiet elegance, every day.',
 
   // The three short promises shown on the home page
   promises: [
