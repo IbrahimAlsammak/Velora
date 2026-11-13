@@ -26,10 +26,10 @@ export default function useOrderAlerts() {
   const newestSeen = useRef(null)
 
   const alertFor = useCallback(
-    (title, body, link) => {
+    (title, body, link, tag = link) => {
       playDing()
       if (canNotify && Notification.permission === 'granted') {
-        const n = new Notification(title, { body, tag: link }) // tag = the same order never shows twice
+        const n = new Notification(title, { body, tag }) // tag = the same order never shows twice
         n.onclick = () => {
           window.focus() // bring the admin tab to the front
           navigate(link)
@@ -82,7 +82,8 @@ export default function useOrderAlerts() {
 
   function test() {
     unlockSound()
-    alertFor('🛍️ New order (test)', 'This is how a new order will look · $59.98', '/admin/orders')
+    // a new tag each time, so every test shows a fresh pop-up (not silently replacing the last one)
+    alertFor('🛍️ New order (test)', 'This is how a new order will look · $59.98', '/admin/orders', `test-${Date.now()}`)
   }
 
   return { pending, permission, enable, test }
