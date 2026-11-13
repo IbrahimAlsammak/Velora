@@ -36,6 +36,9 @@ public final class AdminDtos {
 
     // ================= Orders =================
 
+    /** For the new-order alert: how many orders wait (pending) + the 5 newest orders. */
+    public record OrderAlerts(long pendingOrders, List<OrderSummary> newestOrders) {}
+
     public record OrderSummary(String orderNumber, String status, String paymentMethod, Instant createdAt, String customerName,
                                String city, String region, String country, int itemCount, BigDecimal total) {
         public static OrderSummary from(Order o) {

@@ -20,6 +20,7 @@ import com.velora.backend.dto.AdminDtos.AdminProduct;
 import com.velora.backend.dto.AdminDtos.CategoryForm;
 import com.velora.backend.dto.AdminDtos.Dashboard;
 import com.velora.backend.dto.AdminDtos.OrderDetail;
+import com.velora.backend.dto.AdminDtos.OrderAlerts;
 import com.velora.backend.dto.AdminDtos.OrderSummary;
 import com.velora.backend.dto.AdminDtos.ProductForm;
 import com.velora.backend.dto.AdminDtos.StatusChange;
@@ -70,6 +71,12 @@ public class AdminController {
     }
 
     // ---------- Orders ----------
+    /** GET /api/admin/orders/alerts -> waiting count + newest orders (for the "new order" ding) */
+    @GetMapping("/orders/alerts")
+    public OrderAlerts orderAlerts() {
+        return orders.alerts();
+    }
+
     @GetMapping("/orders")
     public List<OrderSummary> orders(@RequestParam(required = false) OrderStatus status) {
         return orders.list(status);

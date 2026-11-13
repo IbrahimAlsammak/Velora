@@ -9,6 +9,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.velora.backend.dto.AdminDtos.Dashboard;
 import com.velora.backend.dto.AdminDtos.OrderDetail;
+import com.velora.backend.dto.AdminDtos.OrderAlerts;
 import com.velora.backend.dto.AdminDtos.OrderSummary;
 import com.velora.backend.dto.AdminDtos.AdminProduct;
 import com.velora.backend.entity.Order;
@@ -41,6 +42,13 @@ public class AdminOrderService {
                 productRepository.countByActiveTrue(),
                 productRepository.findByActiveTrueAndStockLessThanEqualOrderByStockAsc(LOW_STOCK_LIMIT)
                         .stream().map(AdminProduct::from).toList(),
+                orderRepository.findTop5ByOrderByCreatedAtDesc().stream().map(OrderSummary::from).toList());
+    }
+
+    /** Asked every 30 seconds by the admin panel, to spot new orders. Small and quick. */
+    public OrderAlerts alerts() {
+        return new OrderAlerts(
+                orderRepository.countByStatus(OrderStatus.PENDING),
                 orderRepository.findTop5ByOrderByCreatedAtDesc().stream().map(OrderSummary::from).toList());
     }
 

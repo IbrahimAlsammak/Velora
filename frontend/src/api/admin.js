@@ -11,6 +11,7 @@ export const getDashboard = () => data(api.get('/admin/dashboard'))
 export const getSalesReport = (period) => data(api.get('/admin/reports/sales', { params: { period } }))
 
 // Orders
+export const getOrderAlerts = () => data(api.get('/admin/orders/alerts')) // waiting count + newest orders
 export const getOrders = (status) => data(api.get('/admin/orders', { params: status ? { status } : {} }))
 export const getAdminOrder = (orderNumber) => data(api.get(`/admin/orders/${orderNumber}`))
 export const changeOrderStatus = (orderNumber, status) =>

@@ -7,6 +7,7 @@ import logo from '../../assets/velora-logo.svg'
 import { useAuth } from '../../context/useAuth.js'
 import useLoad from '../../hooks/useLoad.js'
 import formatDate from '../../utils/formatDate.js'
+import useOrderAlerts from './useOrderAlerts.js'
 
 const LINKS = [
   { to: '/admin', label: 'Dashboard', icon: '◫', end: true },
@@ -24,6 +25,7 @@ export default function AdminLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const shop = useShopSwitch()
+  const alerts = useOrderAlerts() // "ding" + pop-up when a new order arrives
 
   // Browser tab says "Velora Admin" while you're in the admin panel
   useEffect(() => {
@@ -33,6 +35,11 @@ export default function AdminLayout() {
       document.title = shopTitle
     }
   }, [])
+
+  // Waiting orders also show in the tab name: "(2) Velora Admin"
+  useEffect(() => {
+    document.title = alerts.pending > 0 ? `(${alerts.pending}) Velora Admin` : 'Velora Admin'
+  }, [alerts.pending])
 
   const linkClass = ({ isActive }) =>
     `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
@@ -49,6 +56,7 @@ export default function AdminLayout() {
         </div>
 
         <ShopSwitch shop={shop} />
+        <AlertsControl alerts={alerts} />
 
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-1 md:flex-col md:overflow-x-visible md:overflow-y-auto">
           {LINKS.map((l) => (
@@ -56,6 +64,12 @@ export default function AdminLayout() {
               {/* fixed width so every label starts at the same place, whatever the icon's size */}
               <span aria-hidden className="w-5 shrink-0 text-center">{l.icon}</span>
               <span className="whitespace-nowrap">{l.label}</span>
+              {/* red number = orders waiting for you */}
+              {l.to === '/admin/orders' && alerts.pending > 0 && (
+                <span className="ml-auto rounded-full bg-red-700 px-2 py-0.5 text-xs font-semibold text-white" title="Waiting orders">
+                  {alerts.pending}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -138,5 +152,24 @@ function ShopSwitch({ shop }) {
         <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${shop.closed ? 'left-0.5' : 'left-5.5'}`} />
       </button>
     </div>
+  )
+}
+
+/** "Turn on order alerts" button, or (once on) a small "Alerts on · Test" line. */
+function AlertsControl({ alerts }) {
+  if (alerts.permission === 'default') {
+    return (
+      <button type="button" onClick={alerts.enable}
+        className="mx-3 mb-3 rounded-lg border border-gold bg-gold-light/20 px-3 py-2 text-left text-sm hover:bg-gold-light/40">
+        🔔 Turn on new-order alerts
+      </button>
+    )
+  }
+  return (
+    <p className="mx-3 mb-3 px-1 text-xs text-mulberry/70">
+      {alerts.permission === 'granted' ? '🔔 Order alerts on' : '🔔 Sound alerts on (pop-ups blocked)'}
+      {' · '}
+      <button type="button" onClick={alerts.test} className="text-gold underline hover:text-mulberry">Test</button>
+    </p>
   )
 }
