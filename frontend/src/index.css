@@ -17,6 +17,19 @@ body {
   @apply bg-cream text-mulberry font-sans antialiased;
 }
 
+/* Show the "hand" mouse pointer on every button (Tailwind 4 shows the normal arrow by default).
+   A button that can't be pressed (e.g. "Sold out") shows the "not allowed" sign instead. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not(:disabled),
+  label:has(input[type='checkbox'], input[type='radio']) {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
 /* Cormorant uses "old-style" numbers by default (1 looks like a Roman I, and some
    digits are smaller than others). This switches to normal, even-height numbers. */
 .font-display {
