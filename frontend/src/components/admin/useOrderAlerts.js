@@ -24,7 +24,7 @@ export default function useOrderAlerts() {
   // Orders newer than this time get an alert. Starts at "when this panel was opened", so an order
   // that arrives while the backend is restarting (and the first check fails) still dings.
   // Orders from before the panel was opened don't ding - they're in the waiting count.
-  const newestSeen = useRef(Date.now())
+  const newestSeen = useRef(null) // set when the panel opens (below)
 
   const alertFor = useCallback(
     (title, body, link, tag = link) => {
@@ -43,6 +43,7 @@ export default function useOrderAlerts() {
 
   useEffect(() => {
     let stopped = false
+    newestSeen.current ??= Date.now() // "now" = when the panel was opened
 
     async function check() {
       try {
