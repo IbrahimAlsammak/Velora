@@ -25,6 +25,7 @@ export const STORE = {
   heroEyebrow: 'The new collection',
   heroTitle: 'Modesty, beautifully made',
   heroText: 'Dresses, makeup and small bags - chosen for comfort, beauty and quiet elegance, every day.',
+  heroNote: 'Bags and makeup are coming soon.', // small line under the banner text - '' to hide it
 
   // The three short promises shown on the home page
   promises: [

@@ -50,6 +50,9 @@ function Hero({ product }) {
           <p className="text-xs uppercase tracking-[0.35em] text-gold">{STORE.heroEyebrow}</p>
           <h1 className="mt-4 font-display text-5xl font-semibold leading-[1.05] md:text-7xl">{STORE.heroTitle}</h1>
           <p className="mx-auto mt-6 max-w-md text-mulberry/75 md:mx-0">{STORE.heroText}</p>
+          {STORE.heroNote && (
+            <p className="mt-3 text-xs uppercase tracking-[0.25em] text-gold">✦ {STORE.heroNote}</p>
+          )}
           <div className="mt-10 flex flex-wrap justify-center gap-3 md:justify-start">
             <Link to="/shop" className="rounded-full bg-mulberry px-10 py-3.5 text-sm uppercase tracking-[0.2em] text-cream transition hover:bg-gold">
               Shop now
