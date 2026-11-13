@@ -92,7 +92,7 @@ function Editor({ initial, categories }) {
       <ErrorBox message={error} />
 
       <Card className="mb-6 text-sm text-mulberry/70">
-        Upload up to {MAX_SLIDES} photos. <strong>Portrait</strong> photos (a bit taller than wide, 4:5) fit the banner best.
+        Upload up to {MAX_SLIDES} photos. <strong>Tall portrait</strong> photos (2:3 - like a phone photo held upright) fit the banner best.
         The first photo shows first; use ‹ › to change the order. Nothing changes on the website until you press <strong>Save</strong>.
         {slides.length === 0 && ' With no photos here, the banner shows your featured products instead.'}
       </Card>
@@ -101,7 +101,7 @@ function Editor({ initial, categories }) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {slides.map((s, i) => (
             <Card key={s.imageUrl} className="flex flex-col gap-3">
-              <div className="relative aspect-4/5 overflow-hidden rounded-2xl ring-1 ring-gold/40">
+              <div className="relative aspect-2/3 overflow-hidden rounded-2xl ring-1 ring-gold/40">
                 <img src={s.imageUrl} alt={`Banner photo ${i + 1}`} className="h-full w-full object-cover" />
                 {s.caption && (
                   <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-mulberry/70 to-transparent px-3 pb-4 pt-8 text-center font-display text-lg text-cream">
