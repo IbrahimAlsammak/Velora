@@ -16,10 +16,9 @@ import com.velora.backend.util.Slugs;
 
 /**
  * SAMPLE data so the shop isn't empty while we build it.
- * - Each start-up: any category below that is missing is created, with its sample products
- *   (so an empty database gets everything, and a new category added here appears automatically).
- * - Sample products that are already there only get their missing colours/sizes filled in.
- * Later you'll add real products from the admin panel.
+ * It runs ONLY when the database has no categories at all (a brand-new install).
+ * After that it never touches anything: categories and products are managed only
+ * from the admin panel (add, edit, delete - nothing comes back by itself).
  */
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -83,12 +82,10 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        for (CategoryInfo c : CATEGORIES) {
-            if (categoryRepository.findBySlug(slugify(c.name())).isEmpty()) {
-                addCategoryWithSamples(c);
-            }
+        if (categoryRepository.count() > 0) {
+            return; // the shop already has data - leave it exactly as the admin made it
         }
-        fillMissingOptions();
+        CATEGORIES.forEach(this::addCategoryWithSamples);
     }
 
     /** Creates one category, then its sample products. */
@@ -109,17 +106,6 @@ public class DataSeeder implements CommandLineRunner {
             p.setFeatured(s.featured());
             applyOptions(p, s);
             productRepository.save(p);
-        }
-    }
-
-    /** For sample products saved before colours/sizes existed: add their options once. */
-    private void fillMissingOptions() {
-        for (Sample s : SAMPLES) {
-            productRepository.findAll().stream().filter(x -> x.getSlug().equals(slugify(s.name()))).findFirst().ifPresent(p -> {
-                if (p.getColors().isEmpty() && p.getSizes().isEmpty()) {
-                    applyOptions(p, s); // saved automatically at the end of the transaction
-                }
-            });
         }
     }
 
