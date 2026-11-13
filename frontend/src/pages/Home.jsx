@@ -69,10 +69,12 @@ function Hero({ slides }) {
           </div>
         </div>
 
-        {/* Arch frame, like the logo. Shows the featured products' photos (slideshow), or the V monogram. */}
-        <div className="relative mx-auto w-64 sm:w-80 md:w-96">
-          <div className="absolute -inset-4 rounded-t-full border border-gold/50" aria-hidden />
-          <div className="relative aspect-[3/4] overflow-hidden rounded-t-full border-2 border-gold/70 bg-gradient-to-b from-cream to-gold-light/60">
+        {/* Floating photo card: a rounded rectangle that gently moves up and down, with a shadow.
+            Shows your banner photos (slideshow), or the featured products' photos, or the V monogram. */}
+        <div className="relative mx-auto w-full max-w-md">
+          {/* thin gold frame, a little offset behind the card */}
+          <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-3xl border border-gold/60" aria-hidden />
+          <div className="hero-float relative aspect-4/5 overflow-hidden rounded-3xl bg-gradient-to-b from-cream to-gold-light/60 shadow-2xl shadow-mulberry/25 ring-1 ring-gold/40">
             <HeroSlideshow slides={slides} />
           </div>
         </div>

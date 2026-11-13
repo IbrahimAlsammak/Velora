@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 const NEXT_AFTER_MS = 4000 // a new photo every 4 seconds
 
 /**
- * The photos inside the arch on the home page banner, one after another (soft fade).
+ * The photos in the floating card of the home page banner, one after another (soft fade).
  * slides = [{ key, imageUrl, caption, link }] - your banner photos (Admin → Home banner),
  * or, if you haven't added any, the featured products' photos.
  * - ‹ › arrows and the dots below to move by hand, swipe on phones

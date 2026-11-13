@@ -36,6 +36,16 @@ body {
   font-variant-numeric: lining-nums;
 }
 
+/* Home banner photo card: floats gently up and down */
+.hero-float {
+  animation: hero-float 6s ease-in-out infinite;
+}
+@keyframes hero-float {
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
 /* "Added to your bag" popup: slides in softly */
 .added-popup {
   animation: popup-in 0.3s ease-out;
@@ -47,7 +57,8 @@ body {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .added-popup {
+  .added-popup,
+  .hero-float {
     animation: none;
   }
 }
