@@ -15,7 +15,7 @@ const PERIODS = {
   WEEK: {
     tab: 'Weekly', current: 'This week', previous: 'last week', range: 'Last 12 weeks', labelEvery: 2,
     label: (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-    long: (d) => `Week of ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`,
+    long: weekRange, // "9 – 15 Nov 2026" (Monday to Sunday)
   },
   MONTH: {
     tab: 'Monthly', current: 'This month', previous: 'last month', range: 'Last 12 months', labelEvery: 1,
@@ -94,7 +94,7 @@ export default function Reports() {
           <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
             {/* The same numbers as a table (newest first) */}
             <Card className="overflow-x-auto p-0">
-              <table className="w-full min-w-[420px] text-left text-sm">
+              <table className="w-full min-w-105 text-left text-sm">
                 <thead className="border-b border-gold-light/70 text-xs uppercase tracking-wider text-mulberry/60">
                   <tr>
                     <th className="px-5 py-3">{period === 'DAY' ? 'Day' : period === 'WEEK' ? 'Week' : 'Month'}</th>
@@ -178,4 +178,24 @@ function StatTile({ label, value, now, before, vs }) {
       </p>
     </Card>
   )
+}
+
+/**
+ * A week from Monday to Sunday, written short:
+ *   same month  -> "9 – 15 Nov 2026"
+ *   two months  -> "30 Nov – 6 Dec 2026"
+ *   two years   -> "29 Dec 2025 – 4 Jan 2026"
+ */
+function weekRange(monday) {
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  const fmt = (d, options) => d.toLocaleDateString('en-GB', options)
+  const end = fmt(sunday, { day: 'numeric', month: 'short', year: 'numeric' })
+  if (monday.getFullYear() !== sunday.getFullYear()) {
+    return `${fmt(monday, { day: 'numeric', month: 'short', year: 'numeric' })} – ${end}`
+  }
+  if (monday.getMonth() !== sunday.getMonth()) {
+    return `${fmt(monday, { day: 'numeric', month: 'short' })} – ${end}`
+  }
+  return `${monday.getDate()} – ${end}`
 }
