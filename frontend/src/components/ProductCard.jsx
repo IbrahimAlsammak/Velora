@@ -1,11 +1,16 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import formatPrice from '../utils/formatPrice.js'
 import ProductImage from './ProductImage.jsx'
 
 /** One product tile in the shop grid. Clicking it opens the product page. */
 export default function ProductCard({ product }) {
+  const location = useLocation()
+  // Remember which page the customer came from (e.g. /shop?category=abayas),
+  // so "Add to bag" can take them back there
+  const from = location.state?.from ?? location.pathname + location.search
+
   return (
-    <Link to={`/product/${product.slug}`} className="group block">
+    <Link to={`/product/${product.slug}`} state={{ from }} className="group block">
       <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-gold-light/30">
         <ProductImage product={product} className="transition duration-500 group-hover:scale-105" />
 

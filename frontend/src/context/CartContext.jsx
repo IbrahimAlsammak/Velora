@@ -23,6 +23,8 @@ const lineKey = (productId, color, size) => `${productId}|${color ?? ''}|${size 
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState(loadCart)
+  // The item just added - shown in the "Added to your bag" popup (null = no popup)
+  const [lastAdded, setLastAdded] = useState(null)
 
   // Save to the browser every time the bag changes
   useEffect(() => {
@@ -56,7 +58,11 @@ export function CartProvider({ children }) {
           },
         ]
       })
+      // id = the time now, so adding the same item twice still shows a fresh popup
+      setLastAdded({ id: Date.now(), name: product.name, imageUrl: product.imageUrl, color, size, quantity })
     }
+
+    const hideAdded = () => setLastAdded(null)
 
     function updateQuantity(key, quantity) {
       setItems((current) =>
@@ -70,8 +76,8 @@ export function CartProvider({ children }) {
     const count = items.reduce((sum, i) => sum + i.quantity, 0)
     const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
-    return { items, count, subtotal, addItem, updateQuantity, removeItem, clear }
-  }, [items])
+    return { items, count, subtotal, lastAdded, addItem, hideAdded, updateQuantity, removeItem, clear }
+  }, [items, lastAdded])
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

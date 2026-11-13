@@ -22,3 +22,19 @@ body {
 .font-display {
   font-variant-numeric: lining-nums;
 }
+
+/* "Added to your bag" popup: slides in softly */
+.added-popup {
+  animation: popup-in 0.3s ease-out;
+}
+@keyframes popup-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .added-popup {
+    animation: none;
+  }
+}

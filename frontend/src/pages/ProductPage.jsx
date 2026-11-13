@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getProduct, getProducts } from '../api/catalog.js'
 import ProductCard from '../components/ProductCard.jsx'
 import ProductImage from '../components/ProductImage.jsx'
@@ -46,10 +46,11 @@ export default function ProductPage() {
 
 function ProductDetails({ product, related }) {
   const { addItem } = useCart()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [color, setColor] = useState(product.colors.length === 1 ? product.colors[0].name : null)
   const [size, setSize] = useState(null)
   const [quantity, setQuantity] = useState(1)
-  const [added, setAdded] = useState(false)
   const [showHint, setShowHint] = useState(false)
 
   const needsColor = product.colors.length > 0 && !color
@@ -60,9 +61,10 @@ function ProductDetails({ product, related }) {
       setShowHint(true)
       return
     }
-    addItem(product, { color, size, quantity })
-    setAdded(true)
-    setShowHint(false)
+    addItem(product, { color, size, quantity }) // also opens the "Added to your bag" popup
+    // Back to the shop - the same category they were browsing, if they came from the shop
+    const from = location.state?.from
+    navigate(from?.startsWith('/shop') ? from : '/shop')
   }
 
   return (
@@ -104,7 +106,7 @@ function ProductDetails({ product, related }) {
                     type="button"
                     title={c.name}
                     aria-label={c.name}
-                    onClick={() => { setColor(c.name); setAdded(false) }}
+                    onClick={() => setColor(c.name)}
                     className={`h-9 w-9 rounded-full border border-mulberry/20 ring-offset-2 ring-offset-cream transition ${
                       color === c.name ? 'ring-2 ring-mulberry' : 'hover:ring-2 hover:ring-gold-light'
                     }`}
@@ -128,7 +130,7 @@ function ProductDetails({ product, related }) {
                   <button
                     key={s}
                     type="button"
-                    onClick={() => { setSize(s); setAdded(false) }}
+                    onClick={() => setSize(s)}
                     className={`min-w-12 rounded-full border px-4 py-2 text-sm transition ${
                       size === s ? 'border-mulberry bg-mulberry text-cream' : 'border-gold-light hover:border-gold'
                     }`}
@@ -159,7 +161,6 @@ function ProductDetails({ product, related }) {
               Please choose {needsColor && needsSize ? 'a colour and a size' : needsColor ? 'a colour' : 'a size'}.
             </p>
           )}
-          {added && <p className="mt-3 text-sm text-green-800">✓ Added to your bag</p>}
         </div>
       </div>
 

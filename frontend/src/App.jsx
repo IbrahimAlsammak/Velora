@@ -1,4 +1,5 @@
 import { Outlet, Route, Routes } from 'react-router-dom'
+import AddedToBag from './components/AddedToBag.jsx'
 import Footer from './components/Footer.jsx'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 import RequireAdmin from './components/admin/RequireAdmin.jsx'
@@ -89,6 +90,7 @@ function ShopLayout() {
         <Outlet />
       </main>
       <Footer />
+      <AddedToBag />
     </div>
   )
 }
