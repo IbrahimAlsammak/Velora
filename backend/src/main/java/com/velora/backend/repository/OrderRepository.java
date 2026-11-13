@@ -2,6 +2,7 @@ package com.velora.backend.repository;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,17 +40,17 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByUserId(Long userId);
 
-    /** Sales report: all orders since a moment, except cancelled ones. */
+    /** Sales report: orders since a moment that have one of these statuses (shipped or delivered). */
     @EntityGraph(attributePaths = "items")
-    List<Order> findByCreatedAtGreaterThanEqualAndStatusNot(Instant from, OrderStatus status);
+    List<Order> findByCreatedAtGreaterThanEqualAndStatusIn(Instant from, Collection<OrderStatus> statuses);
 
     /** Before deleting a customer: keep their orders, but unlink them (they become guest orders). */
     @Modifying
     @Query("update Order o set o.user = null where o.user.id = :userId")
     void unlinkOrdersFromUser(@Param("userId") Long userId);
 
-    /** Total money from all orders that aren't cancelled. */
-    @Query("select coalesce(sum(o.total), 0) from Order o where o.status <> com.velora.backend.entity.OrderStatus.CANCELLED")
+    /** Total money from orders that are shipped or delivered (real sales). */
+    @Query("select coalesce(sum(o.total), 0) from Order o where o.status in (com.velora.backend.entity.OrderStatus.SHIPPED, com.velora.backend.entity.OrderStatus.DELIVERED)")
     BigDecimal totalSales();
 
     /** Has this product ever been ordered? (then it can't be deleted, only hidden) */

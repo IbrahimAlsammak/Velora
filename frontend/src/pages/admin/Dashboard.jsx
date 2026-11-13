@@ -20,7 +20,7 @@ export default function Dashboard() {
             <Stat label="Total orders" value={data.totalOrders} />
             <Stat label="Waiting (pending)" value={data.pendingOrders} highlight={data.pendingOrders > 0}
               link="/admin/orders?status=PENDING" />
-            <Stat label="Sales" value={formatPrice(data.totalSales)} hint="all orders except cancelled" />
+            <Stat label="Sales" value={formatPrice(data.totalSales)} hint="shipped and delivered orders" />
             <Stat label="Products in shop" value={data.activeProducts} />
           </div>
 

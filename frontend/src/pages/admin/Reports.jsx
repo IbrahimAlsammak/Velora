@@ -50,7 +50,7 @@ export default function Reports() {
 
   return (
     <>
-      <PageHeader title="Sales report" subtitle="Cancelled orders are not counted · times in Lebanon time" />
+      <PageHeader title="Sales report" subtitle="Only shipped and delivered orders are counted · times in Lebanon time" />
 
       {/* Filters: one row, above everything */}
       <div className="mb-6 flex flex-wrap items-center gap-4">

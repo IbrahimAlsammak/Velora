@@ -29,11 +29,14 @@ import com.velora.backend.repository.OrderRepository;
 
 /**
  * The admin "Sales report": sales and orders per day / week / month.
- * Cancelled orders are NOT counted. Days are counted in the store's time zone (Lebanon).
+ * Only orders that are SHIPPED or DELIVERED count as sales (pending, confirmed and cancelled don't). Days are counted in the store's time zone (Lebanon).
  */
 @Service
 @Transactional(readOnly = true)
 public class ReportService {
+
+    /** The statuses that count as a real sale. */
+    private static final List<OrderStatus> SOLD = List.of(OrderStatus.SHIPPED, OrderStatus.DELIVERED);
 
     private final OrderRepository orderRepository;
     private final ZoneId zone;
@@ -58,9 +61,9 @@ public class ReportService {
         }
         LocalDate firstStart = buckets.keySet().iterator().next();
 
-        // All non-cancelled orders since the first bar
-        List<Order> orders = orderRepository.findByCreatedAtGreaterThanEqualAndStatusNot(
-                firstStart.atStartOfDay(zone).toInstant(), OrderStatus.CANCELLED);
+        // Shipped + delivered orders since the first bar
+        List<Order> orders = orderRepository.findByCreatedAtGreaterThanEqualAndStatusIn(
+                firstStart.atStartOfDay(zone).toInstant(), SOLD);
 
         Map<String, TopTotals> products = new HashMap<>();
         Totals total = new Totals();
