@@ -41,7 +41,8 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen md:flex">
-      <aside className="border-b border-gold-light/60 bg-white/70 md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:border-b-0 md:border-r">
+      {/* Sidebar = a column: logo, shop switch, menu (takes the free space, scrolls if the screen is short), then your name at the bottom */}
+      <aside className="border-b border-gold-light/60 bg-white/70 md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:border-b-0 md:border-r">
         <div className="flex items-center justify-between px-4 py-4 md:block">
           <Link to="/admin"><img src={logo} alt="Velora" className="h-10" /></Link>
           <p className="text-xs uppercase tracking-[0.25em] text-gold md:mt-2">Admin</p>
@@ -49,16 +50,17 @@ export default function AdminLayout() {
 
         <ShopSwitch shop={shop} />
 
-        <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:overflow-visible">
+        <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-1 md:flex-col md:overflow-x-visible md:overflow-y-auto">
           {LINKS.map((l) => (
             <NavLink key={l.to} to={l.to} end={l.end} className={linkClass}>
-              <span aria-hidden>{l.icon}</span>
+              {/* fixed width so every label starts at the same place, whatever the icon's size */}
+              <span aria-hidden className="w-5 shrink-0 text-center">{l.icon}</span>
               <span className="whitespace-nowrap">{l.label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="hidden border-t border-gold-light/60 px-4 py-4 text-sm md:absolute md:bottom-0 md:block md:w-full">
+        <div className="hidden shrink-0 border-t border-gold-light/60 px-4 py-4 text-sm md:block">
           <a href="/" target="_blank" rel="noreferrer" className="block text-gold hover:underline">View shop ↗</a>
           <p className="mt-3 font-medium text-mulberry">{user?.fullName}</p>
           <p className="truncate text-mulberry/60" title={user?.email}>{user?.email}</p>
@@ -135,7 +137,7 @@ function ShopSwitch({ shop }) {
       </div>
       <button type="button" role="switch" aria-checked={!shop.closed} aria-label="Shop open" onClick={shop.toggle} disabled={shop.saving}
         className={`relative h-6 w-11 shrink-0 rounded-full transition disabled:opacity-60 ${shop.closed ? 'bg-red-700' : 'bg-green-700'}`}>
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${shop.closed ? 'left-0.5' : 'left-[22px]'}`} />
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${shop.closed ? 'left-0.5' : 'left-5.5'}`} />
       </button>
     </div>
   )
