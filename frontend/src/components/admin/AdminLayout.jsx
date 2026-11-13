@@ -63,7 +63,6 @@ export default function AdminLayout() {
         <div className="hidden shrink-0 border-t border-gold-light/60 px-4 py-4 text-sm md:block">
           <a href="/" target="_blank" rel="noreferrer" className="block text-gold hover:underline">View shop ↗</a>
           <p className="mt-3 font-medium text-mulberry">{user?.fullName}</p>
-          <p className="truncate text-mulberry/60" title={user?.email}>{user?.email}</p>
           <button type="button" className="mt-1 text-mulberry underline hover:text-red-700"
             onClick={() => { logout(); navigate('/admin/login') }}>
             Log out
