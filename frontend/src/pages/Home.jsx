@@ -1,18 +1,19 @@
 import { Link } from 'react-router-dom'
 import { getHome } from '../api/catalog.js'
 import ProductCard from '../components/ProductCard.jsx'
+import HeroSlideshow from '../components/HeroSlideshow.jsx'
 import ProductImage from '../components/ProductImage.jsx'
 import { STORE } from '../config/store.js'
 import useLoad from '../hooks/useLoad.js'
 
 export default function Home() {
   const { data, error } = useLoad(getHome)
-  // The banner shows the first featured product that has a photo (if there is one)
-  const heroProduct = data?.featured.find((p) => p.imageUrl)
+  // The banner arch shows the featured products that have a photo, one after another
+  const heroProducts = data?.featured.filter((p) => p.imageUrl) ?? []
 
   return (
     <>
-      <Hero product={heroProduct} />
+      <Hero products={heroProducts} />
 
       {error && <p className="mt-10 text-center text-red-700">{error}</p>}
 
@@ -42,7 +43,7 @@ export default function Home() {
 }
 
 /** The big welcome banner at the top. */
-function Hero({ product }) {
+function Hero({ products }) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-cream via-cream to-gold-light/40">
       <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-24">
@@ -63,20 +64,11 @@ function Hero({ product }) {
           </div>
         </div>
 
-        {/* Arch frame, like the logo. Shows a featured product photo, or the V monogram. */}
+        {/* Arch frame, like the logo. Shows the featured products' photos (slideshow), or the V monogram. */}
         <div className="relative mx-auto w-64 sm:w-80 md:w-96">
           <div className="absolute -inset-4 rounded-t-full border border-gold/50" aria-hidden />
           <div className="relative aspect-[3/4] overflow-hidden rounded-t-full border-2 border-gold/70 bg-gradient-to-b from-cream to-gold-light/60">
-            {product ? (
-              <Link to={`/product/${product.slug}`} className="block h-full">
-                <ProductImage product={product} className="transition duration-700 hover:scale-105" />
-              </Link>
-            ) : (
-              <div className="flex h-full flex-col items-center justify-center">
-                <span className="font-display text-[9rem] leading-none text-mulberry">V</span>
-                <span className="mt-2 text-xs uppercase tracking-[0.4em] text-gold">Velora</span>
-              </div>
-            )}
+            <HeroSlideshow products={products} />
           </div>
         </div>
       </div>
