@@ -4,7 +4,11 @@ import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +19,9 @@ import com.velora.backend.dto.DeliveryDtos.Quote;
 import com.velora.backend.dto.OrderDto;
 import com.velora.backend.entity.Order;
 import com.velora.backend.entity.OrderItem;
+import com.velora.backend.entity.PaymentMethod;
 import com.velora.backend.entity.Product;
+import com.velora.backend.notify.NewOrderEvent;
 import com.velora.backend.repository.OrderRepository;
 import com.velora.backend.repository.ProductRepository;
 import com.velora.backend.util.Phones;
@@ -36,10 +42,15 @@ public class OrderService {
     private final AuthService authService;
     private final DeliveryService deliveryService;
     private final StoreService storeService;
+    private final ApplicationEventPublisher events;
+    private final String frontendUrl;
 
     public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
-                        AuthService authService, DeliveryService deliveryService, StoreService storeService) {
+                        AuthService authService, DeliveryService deliveryService, StoreService storeService,
+                        ApplicationEventPublisher events, @Value("${velora.frontend-url}") String frontendUrl) {
         this.orderRepository = orderRepository;
+        this.events = events;
+        this.frontendUrl = frontendUrl;
         this.storeService = storeService;
         this.productRepository = productRepository;
         this.authService = authService;
@@ -115,7 +126,36 @@ public class OrderService {
         order.setShippingCost(delivery.fee());
         order.setTotal(subtotal.add(delivery.fee()));
 
-        return OrderDto.from(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        // Tell the owner's phone (Telegram) - sent only once the order is really saved
+        events.publishEvent(new NewOrderEvent(newOrderMessage(saved)));
+        return OrderDto.from(saved);
+    }
+
+    /** The text of the "new order" phone message. */
+    private String newOrderMessage(Order o) {
+        StringBuilder text = new StringBuilder();
+        text.append("🛍️ New order ").append(o.getOrderNumber()).append("\n\n");
+        text.append("👤 ").append(o.getCustomerName()).append(" · ").append(o.getPhone()).append('\n');
+        text.append("📍 ").append(o.getCity()).append(" - ").append(o.getAddressLine()).append("\n\n");
+        for (OrderItem item : o.getItems()) {
+            text.append("• ").append(item.getProductName());
+            String options = Stream.of(item.getColor(), item.getSize())
+                    .filter(x -> x != null && !x.isBlank())
+                    .collect(Collectors.joining(", "));
+            if (!options.isEmpty()) {
+                text.append(" (").append(options).append(')');
+            }
+            text.append(" × ").append(item.getQuantity()).append(" - $").append(item.getLineTotal()).append('\n');
+        }
+        text.append("\nDelivery: $").append(o.getShippingCost());
+        text.append("\n💰 Total: $").append(o.getTotal());
+        text.append("\n💳 ").append(o.getPaymentMethod() == PaymentMethod.WHISH_TRANSFER ? "Whish transfer" : "Cash on delivery");
+        if (o.getNotes() != null) {
+            text.append("\n📝 ").append(o.getNotes());
+        }
+        text.append("\n\nOpen: ").append(frontendUrl).append("/admin/orders/").append(o.getOrderNumber());
+        return text.toString();
     }
 
     @Transactional(readOnly = true)

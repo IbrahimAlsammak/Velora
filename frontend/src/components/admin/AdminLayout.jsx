@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { setMaintenance } from '../../api/admin.js'
+import { getTelegramStatus, sendTelegramTest, setMaintenance } from '../../api/admin.js'
 import { getStoreStatus } from '../../api/catalog.js'
 import { errorMessage } from '../../api/client.js'
 import logo from '../../assets/velora-logo.svg'
@@ -57,6 +57,7 @@ export default function AdminLayout() {
 
         <ShopSwitch shop={shop} />
         <AlertsControl alerts={alerts} />
+        <PhoneAlerts />
 
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-1 md:flex-col md:overflow-x-visible md:overflow-y-auto">
           {LINKS.map((l) => (
@@ -170,6 +171,37 @@ function AlertsControl({ alerts }) {
       {alerts.permission === 'granted' ? '🔔 Order alerts on' : '🔔 Sound alerts on (pop-ups blocked)'}
       {' · '}
       <button type="button" onClick={alerts.test} className="text-gold underline hover:text-mulberry">Test</button>
+    </p>
+  )
+}
+
+/** "📱 Phone alerts (Telegram): on · Test" - messages to your phone, even when this panel is closed. */
+function PhoneAlerts() {
+  const { data } = useLoad(getTelegramStatus)
+  const [sending, setSending] = useState(false)
+  if (!data) return null
+
+  async function test() {
+    setSending(true)
+    try {
+      const { sent } = await sendTelegramTest()
+      window.alert(sent ? 'Sent ✓ - check Telegram on your phone.' : 'Not sent. Check the bot token and chat id in the secrets file.')
+    } catch (err) {
+      window.alert(errorMessage(err))
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <p className="mx-3 mb-3 -mt-2 px-1 text-xs text-mulberry/70">
+      {data.configured ? '📱 Phone alerts on' : '📱 Phone alerts: not set up'}
+      {data.configured && (
+        <>
+          {' · '}
+          <button type="button" onClick={test} disabled={sending} className="text-gold underline hover:text-mulberry">Test</button>
+        </>
+      )}
     </p>
   )
 }

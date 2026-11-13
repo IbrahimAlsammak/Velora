@@ -46,6 +46,10 @@ export function uploadPhoto(file) {
   return data(api.post('/admin/uploads', body)).then((d) => d.url)
 }
 
+// Phone alerts (Telegram bot)
+export const getTelegramStatus = () => data(api.get('/admin/notifications/telegram'))
+export const sendTelegramTest = () => data(api.post('/admin/notifications/telegram/test'))
+
 // Maintenance: true = close the shop ("back soon" page), false = open it again
 export const setMaintenance = (maintenance) => data(api.put('/admin/store/maintenance', { maintenance }))
 
