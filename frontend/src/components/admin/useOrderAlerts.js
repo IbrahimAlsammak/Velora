@@ -21,9 +21,10 @@ export default function useOrderAlerts() {
   const navigate = useNavigate()
   const [pending, setPending] = useState(0)
   const [permission, setPermission] = useState(canNotify ? Notification.permission : 'unsupported')
-  // The newest order we already know about. null = first check not done yet
-  // (orders that came while the panel was closed don't ding - they're in the waiting count).
-  const newestSeen = useRef(null)
+  // Orders newer than this time get an alert. Starts at "when this panel was opened", so an order
+  // that arrives while the backend is restarting (and the first check fails) still dings.
+  // Orders from before the panel was opened don't ding - they're in the waiting count.
+  const newestSeen = useRef(Date.now())
 
   const alertFor = useCallback(
     (title, body, link, tag = link) => {
@@ -49,18 +50,15 @@ export default function useOrderAlerts() {
         if (stopped) return
         setPending(pendingOrders)
 
-        const newestTime = Math.max(0, ...newestOrders.map((o) => Date.parse(o.createdAt)))
-        if (newestSeen.current !== null) {
-          const fresh = newestOrders.filter((o) => Date.parse(o.createdAt) > newestSeen.current).reverse() // oldest first
-          fresh.forEach((o) =>
-            alertFor(
-              `🛍️ New order ${o.orderNumber}`,
-              `${o.customerName} · ${o.itemCount} item${o.itemCount === 1 ? '' : 's'} · ${formatPrice(o.total)}`,
-              `/admin/orders/${o.orderNumber}`,
-            ),
-          )
-        }
-        newestSeen.current = Math.max(newestSeen.current ?? 0, newestTime)
+        const fresh = newestOrders.filter((o) => Date.parse(o.createdAt) > newestSeen.current).reverse() // oldest first
+        fresh.forEach((o) =>
+          alertFor(
+            `🛍️ New order ${o.orderNumber}`,
+            `${o.customerName} · ${o.itemCount} item${o.itemCount === 1 ? '' : 's'} · ${formatPrice(o.total)}`,
+            `/admin/orders/${o.orderNumber}`,
+          ),
+        )
+        newestSeen.current = Math.max(newestSeen.current, ...newestOrders.map((o) => Date.parse(o.createdAt)))
       } catch {
         /* backend not reachable for a moment - try again at the next check */
       }
@@ -68,9 +66,12 @@ export default function useOrderAlerts() {
 
     check()
     const timer = setInterval(check, CHECK_EVERY_MS)
+    // Chrome only allows sound after a click on the page - so the first click anywhere turns sound on
+    document.addEventListener('pointerdown', unlockSound, { once: true })
     return () => {
       stopped = true
       clearInterval(timer)
+      document.removeEventListener('pointerdown', unlockSound)
     }
   }, [alertFor])
 
