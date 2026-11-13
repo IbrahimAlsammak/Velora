@@ -69,10 +69,14 @@ export default function useOrderAlerts() {
     const timer = setInterval(check, CHECK_EVERY_MS)
     // Chrome only allows sound after a click on the page - so the first click anywhere turns sound on
     document.addEventListener('pointerdown', unlockSound, { once: true })
+    // Chrome may put a background tab to sleep - check straight away when you come back to it
+    const checkWhenVisible = () => document.visibilityState === 'visible' && check()
+    document.addEventListener('visibilitychange', checkWhenVisible)
     return () => {
       stopped = true
       clearInterval(timer)
       document.removeEventListener('pointerdown', unlockSound)
+      document.removeEventListener('visibilitychange', checkWhenVisible)
     }
   }, [alertFor])
 
