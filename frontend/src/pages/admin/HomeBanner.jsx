@@ -92,7 +92,7 @@ function Editor({ initial, categories }) {
       <ErrorBox message={error} />
 
       <Card className="mb-6 text-sm text-mulberry/70">
-        Upload up to {MAX_SLIDES} photos. Every photo is shown <strong>whole and sharp</strong> - the banner takes the shape of each photo. Upright phone photos look best.
+        Upload up to {MAX_SLIDES} photos. The banner always keeps the same shape (3:4). Each photo fills it, sharp - if a photo has another shape, its edges are trimmed (the preview below shows exactly what is kept). <strong>Upright phone photos</strong> fit perfectly.
         The first photo shows first; use ‹ › to change the order. Nothing changes on the website until you press <strong>Save</strong>.
         {slides.length === 0 && ' With no photos here, the banner shows your featured products instead.'}
       </Card>
@@ -101,9 +101,9 @@ function Editor({ initial, categories }) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {slides.map((s, i) => (
             <Card key={s.imageUrl} className="flex flex-col gap-3">
-              <div className="relative overflow-hidden rounded-2xl ring-1 ring-gold/40">
-                {/* the whole photo in its own shape - just like on the home page */}
-                <img src={s.imageUrl} alt={`Banner photo ${i + 1}`} className="block w-full" />
+              <div className="relative aspect-3/4 overflow-hidden rounded-2xl ring-1 ring-gold/40">
+                {/* exactly like on the home page: fills the 3:4 card */}
+                <img src={s.imageUrl} alt={`Banner photo ${i + 1}`} className="h-full w-full object-cover" />
                 {s.caption && (
                   <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-mulberry/70 to-transparent px-3 pb-4 pt-8 text-center font-display text-lg text-cream">
                     {s.caption}

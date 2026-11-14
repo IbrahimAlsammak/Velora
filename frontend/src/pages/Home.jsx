@@ -69,12 +69,12 @@ function Hero({ slides }) {
           </div>
         </div>
 
-        {/* Floating photo card: a rounded rectangle (in the shape of the photo shown) that gently moves up and down.
+        {/* Floating photo card: a 3:4 rounded rectangle that gently moves up and down, with a shadow.
             Shows your banner photos (slideshow), or the featured products' photos, or the V monogram. */}
         <div className="relative mx-auto w-full max-w-xs sm:max-w-sm">
           {/* thin gold frame, a little offset behind the card */}
           <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-3xl border border-gold/60" aria-hidden />
-          <div className="hero-float relative overflow-hidden rounded-3xl bg-gradient-to-b from-cream to-gold-light/60 shadow-2xl shadow-mulberry/25 ring-1 ring-gold/40">
+          <div className="hero-float relative aspect-3/4 overflow-hidden rounded-3xl bg-gradient-to-b from-cream to-gold-light/60 shadow-2xl shadow-mulberry/25 ring-1 ring-gold/40">
             <HeroSlideshow slides={slides} />
           </div>
         </div>

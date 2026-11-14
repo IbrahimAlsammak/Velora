@@ -10,18 +10,13 @@ const NEXT_AFTER_MS = 4000 // a new photo every 4 seconds
  * - ‹ › arrows and the dots below to move by hand, swipe on phones
  * - pauses while the mouse is over it
  * - one photo = no movement; no photos = the big "V" monogram
- * - the card takes the SHAPE OF EACH PHOTO, so every photo is shown whole and sharp (nothing cut off)
+ * - the card always keeps the same shape (3:4, like a phone photo held upright);
+ *   each photo fills it completely and sharply - a photo with another shape gets its edges trimmed
  */
-
-// Shape limits, so a very wide or very tall photo can't make the card strange (width / height)
-const MIN_RATIO = 0.5 // at most twice as tall as wide
-const MAX_RATIO = 1.5 // at most 1.5 times as wide as tall
-const DEFAULT_RATIO = 3 / 4 // until the photo has loaded (= a phone photo held upright)
 export default function HeroSlideshow({ slides }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const touchStartX = useRef(null)
-  const [ratios, setRatios] = useState({}) // shape of each photo once loaded: { key: width / height }
   const count = slides.length
   const current = count ? index % count : 0 // stays valid if the list gets shorter
 
@@ -35,7 +30,7 @@ export default function HeroSlideshow({ slides }) {
 
   if (count === 0) {
     return (
-      <div className="flex aspect-3/4 flex-col items-center justify-center">
+      <div className="flex h-full flex-col items-center justify-center">
         <span className="font-display text-[9rem] leading-none text-mulberry">V</span>
         <span className="mt-2 text-xs uppercase tracking-[0.4em] text-gold">Velora</span>
       </div>
@@ -43,12 +38,10 @@ export default function HeroSlideshow({ slides }) {
   }
 
   const go = (step) => setIndex((current + step + count) % count)
-  const shape = Math.min(MAX_RATIO, Math.max(MIN_RATIO, ratios[slides[current].key] ?? DEFAULT_RATIO))
 
   return (
     <div
-      className="relative w-full transition-[aspect-ratio] duration-700"
-      style={{ aspectRatio: shape }}
+      className="relative h-full"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
@@ -64,12 +57,8 @@ export default function HeroSlideshow({ slides }) {
         const className = `absolute inset-0 transition-opacity duration-1000 ${i === current ? 'opacity-100' : 'pointer-events-none opacity-0'}`
         const content = (
           <>
-            {/* The whole photo, sharp. The card takes its shape, so it fills the card exactly. */}
-            <img src={slide.imageUrl} alt={slide.caption ?? ''} className="h-full w-full object-contain"
-              onLoad={(e) => {
-                const { naturalWidth: w, naturalHeight: h } = e.currentTarget
-                if (w && h) setRatios((r) => ({ ...r, [slide.key]: w / h }))
-              }} />
+            {/* The photo fills the whole card, sharp (object-cover = trims the edges if the shape differs) */}
+            <img src={slide.imageUrl} alt={slide.caption ?? ''} className="h-full w-full object-cover" />
             {/* text at the bottom of the photo */}
             {slide.caption && (
               <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-mulberry/70 to-transparent px-4 pb-8 pt-10 text-center font-display text-xl text-cream">
