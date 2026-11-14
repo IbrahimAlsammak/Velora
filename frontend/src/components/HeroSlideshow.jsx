@@ -55,7 +55,10 @@ export default function HeroSlideshow({ slides }) {
         const className = `absolute inset-0 transition-opacity duration-1000 ${i === current ? 'opacity-100' : 'pointer-events-none opacity-0'}`
         const content = (
           <>
-            <img src={slide.imageUrl} alt={slide.caption ?? ''} className="h-full w-full object-cover" />
+            {/* The WHOLE photo is shown (nothing cut off). Any empty space around it is filled
+                with a soft, blurred copy of the same photo, so the card always looks full. */}
+            <img src={slide.imageUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full scale-110 object-cover blur-xl brightness-90" />
+            <img src={slide.imageUrl} alt={slide.caption ?? ''} className="relative h-full w-full object-contain" />
             {/* text at the bottom of the photo */}
             {slide.caption && (
               <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-mulberry/70 to-transparent px-4 pb-8 pt-10 text-center font-display text-xl text-cream">
