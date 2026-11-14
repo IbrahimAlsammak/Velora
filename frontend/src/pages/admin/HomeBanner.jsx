@@ -101,7 +101,7 @@ function Editor({ initial, categories }) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {slides.map((s, i) => (
             <Card key={s.imageUrl} className="flex flex-col gap-3">
-              <div className="relative aspect-2/3 overflow-hidden rounded-2xl ring-1 ring-gold/40">
+              <div className="relative aspect-3/4 overflow-hidden rounded-2xl ring-1 ring-gold/40">
                 {/* same as the home page: whole photo, blurred copy behind it */}
                 <img src={s.imageUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full scale-110 object-cover blur-xl brightness-90" />
                 <img src={s.imageUrl} alt={`Banner photo ${i + 1}`} className="relative h-full w-full object-contain" />
