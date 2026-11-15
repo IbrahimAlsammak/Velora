@@ -184,7 +184,7 @@ function Form({ products }) {
                       {p.colors.map((c) => {
                         // colour first: greyed out only if it is sold out in EVERY size
                         const ok = colorInStock(p, c.name, null)
-                        return <option key={c.name} value={c.name} disabled={!ok}>{c.name}{ok ? '' : ' (sold out)'}</option>
+                        return <option key={c.name} value={c.name} disabled={!ok}>{c.name}</option>
                       })}
                     </select>
                   </Field>
