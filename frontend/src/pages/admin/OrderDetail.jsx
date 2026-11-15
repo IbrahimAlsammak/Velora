@@ -80,8 +80,13 @@ export default function OrderDetail() {
     }
   }
 
-  async function handleDelete() {
-    if (!window.confirm(`Delete order ${orderNumber} for good? This cannot be undone.`)) return
+  async function handleDelete(keepStock = false) {
+    const question = keepStock
+      ? `Delete order ${orderNumber}? Only this order is removed: the stock stays as it is ` +
+        '(the pieces stay sold), and it leaves the sales report. ' +
+        'If you entered it by mistake and want the pieces back in stock, press "Cancel this sale" instead. This cannot be undone.'
+      : `Delete order ${orderNumber} for good? This cannot be undone.`
+    if (!window.confirm(question)) return
     setBusy(true)
     setActionError(null)
     try {
@@ -148,8 +153,14 @@ export default function OrderDetail() {
         <Card className="mb-6 flex flex-wrap items-center gap-3">
           <span className="mr-auto text-sm text-green-800">✓ Sold on {soldOn} - counted in your sales report.</span>
           {/* Entered by mistake, or the customer gave it back: pieces go back into stock */}
-          <Button variant="danger" disabled={busy} onClick={() => setStatus('CANCELLED', true)}>
+          <Button variant="danger" disabled={busy} onClick={() => setStatus('CANCELLED', true)}
+            title="The pieces go back into stock">
             Cancel this sale
+          </Button>
+          {/* Just remove the record: the pieces stay sold */}
+          <Button variant="danger" disabled={busy} onClick={() => handleDelete(true)}
+            title="Removes only this order - the stock stays as it is">
+            Delete (keep stock)
           </Button>
         </Card>
       )}
@@ -168,7 +179,7 @@ export default function OrderDetail() {
           <span className="mr-auto text-sm text-mulberry/70">
             This order is cancelled. You can delete it if it was a test or mistake.
           </span>
-          <Button variant="danger" disabled={busy} onClick={handleDelete}>Delete order</Button>
+          <Button variant="danger" disabled={busy} onClick={() => handleDelete()}>Delete order</Button>
         </Card>
       )}
       <ErrorBox message={actionError} />

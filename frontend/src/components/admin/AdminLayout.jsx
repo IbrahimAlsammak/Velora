@@ -14,6 +14,7 @@ const LINKS = [
   { to: '/admin/reports', label: 'Sales report', icon: '▥' },
   { to: '/admin/orders', label: 'Orders', icon: '▤' },
   { to: '/admin/products', label: 'Products', icon: '◇' },
+  { to: '/admin/stock', label: 'Stock', icon: '▧' },
   { to: '/admin/categories', label: 'Categories', icon: '▦' },
   { to: '/admin/customers', label: 'Customers', icon: '◯' },
   { to: '/admin/delivery', label: 'Delivery fees', icon: '⛟' },

@@ -20,6 +20,7 @@ import AdminProductForm from './pages/admin/ProductForm.jsx'
 import AdminProducts from './pages/admin/Products.jsx'
 import ManualOrder from './pages/admin/ManualOrder.jsx'
 import Reports from './pages/admin/Reports.jsx'
+import Stock from './pages/admin/Stock.jsx'
 import AccountLayout from './pages/account/AccountLayout.jsx'
 import MyOrders from './pages/account/MyOrders.jsx'
 import Overview from './pages/account/Overview.jsx'
@@ -78,6 +79,7 @@ export default function App() {
           <Route path="products" element={<AdminProducts />} />
           <Route path="products/new" element={<AdminProductForm />} />
           <Route path="products/:id" element={<AdminProductForm />} />
+          <Route path="stock" element={<Stock />} />
           <Route path="categories" element={<Categories />} />
           <Route path="customers" element={<Customers />} />
           <Route path="delivery" element={<Delivery />} />

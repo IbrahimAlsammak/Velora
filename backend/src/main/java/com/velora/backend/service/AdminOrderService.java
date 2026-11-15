@@ -14,6 +14,7 @@ import com.velora.backend.dto.AdminDtos.OrderSummary;
 import com.velora.backend.dto.AdminDtos.AdminProduct;
 import com.velora.backend.entity.Order;
 import com.velora.backend.entity.OrderItem;
+import com.velora.backend.entity.OrderSource;
 import com.velora.backend.entity.OrderStatus;
 import com.velora.backend.repository.OrderRepository;
 import com.velora.backend.repository.ProductRepository;
@@ -102,13 +103,17 @@ public class AdminOrderService {
     }
 
     /**
-     * Delete an order for good - ONLY if it's cancelled first (stock was already returned then).
-     * Real orders are business records, so they can't be deleted by accident.
+     * Delete an order for good. Allowed when:
+     *  - it's cancelled (stock was already returned then), or
+     *  - it's a manual sale (WhatsApp / Instagram) that is delivered: only the record is removed -
+     *    the stock stays exactly as it is (the pieces stay sold) and it leaves the sales report.
+     * Website orders must be cancelled first, so they can't be deleted by accident.
      */
     @Transactional
     public void delete(String orderNumber) {
         Order order = find(orderNumber);
-        if (order.getStatus() != OrderStatus.CANCELLED) {
+        boolean manualSale = order.getSource() != OrderSource.WEBSITE && order.getStatus() == OrderStatus.DELIVERED;
+        if (order.getStatus() != OrderStatus.CANCELLED && !manualSale) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only cancelled orders can be deleted. Cancel it first.");
         }
         orderRepository.delete(order); // its order lines are deleted with it (cascade)

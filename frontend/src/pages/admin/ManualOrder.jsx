@@ -19,7 +19,21 @@ function piecesLeft(product, color, size) {
   return v ? v.stock : 0
 }
 
-const emptyLine = () => ({ key: Date.now() + Math.random(), productId: '', color: '', size: '', quantity: 1, price: '' })
+/** Can this colour still be sold? (with the chosen size, or in any size if no size chosen yet) */
+function colorInStock(product, color, size) {
+  if (!product.variants?.length) return product.stock > 0
+  if (size || !product.sizes.length) return piecesLeft(product, color, size) > 0
+  return product.variants.some((v) => v.color === color && v.stock > 0)
+}
+
+/** Can this size still be sold? (in the chosen colour, or in any colour if no colour chosen yet) */
+function sizeInStock(product, size, color) {
+  if (!product.variants?.length) return product.stock > 0
+  if (color || !product.colors.length) return piecesLeft(product, color, size) > 0
+  return product.variants.some((v) => v.size === size && v.stock > 0)
+}
+
+const emptyLine =() => ({ key: Date.now() + Math.random(), productId: '', color: '', size: '', quantity: 1, price: '' })
 
 /**
  * Admin → Orders → "+ Manual order": a sale you made in a WhatsApp / Instagram chat.
@@ -160,9 +174,17 @@ function Form({ products }) {
                 </Field>
                 {p?.colors.length > 0 && (
                   <Field label="Colour" className="sm:col-span-2">
-                    <select className={inputClass} value={line.color} onChange={(e) => updateLine(i, { color: e.target.value })}>
+                    <select className={inputClass} value={line.color} onChange={(e) => {
+                      const color = e.target.value
+                      // the chosen size is sold out in this colour -> choose the size again
+                      const size = line.size && piecesLeft(p, color, line.size) === 0 ? '' : line.size
+                      updateLine(i, { color, size })
+                    }}>
                       <option value="">Choose…</option>
-                      {p.colors.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                      {p.colors.map((c) => {
+                        const ok = colorInStock(p, c.name, line.size)
+                        return <option key={c.name} value={c.name} disabled={!ok}>{c.name}{ok ? '' : ' (sold out)'}</option>
+                      })}
                     </select>
                   </Field>
                 )}
@@ -170,7 +192,10 @@ function Form({ products }) {
                   <Field label="Size" className="sm:col-span-2">
                     <select className={inputClass} value={line.size} onChange={(e) => updateLine(i, { size: e.target.value })}>
                       <option value="">Choose…</option>
-                      {p.sizes.map((s) => <option key={s} value={s}>{s}</option>)}
+                      {p.sizes.map((s) => {
+                        const ok = sizeInStock(p, s, line.color)
+                        return <option key={s} value={s} disabled={!ok}>{s}{ok ? '' : ' (sold out)'}</option>
+                      })}
                     </select>
                   </Field>
                 )}
@@ -178,7 +203,7 @@ function Form({ products }) {
                   <input className={inputClass} type="number" min={1} max={100} value={line.quantity}
                     onChange={(e) => updateLine(i, { quantity: e.target.value })} />
                 </Field>
-                <Field label="Price ($)" className="sm:col-span-2" hint={p && Number(line.price) !== p.price ? `Normal: ${formatPrice(p.price)}` : null}>
+                <Field label="Price each ($)" className="sm:col-span-2" hint={p && Number(line.price) !== p.price ? `Normal: ${formatPrice(p.price)}` : null}>
                   <input className={inputClass} type="number" min={0} step="0.01" value={line.price} disabled={!p}
                     onChange={(e) => updateLine(i, { price: e.target.value })} />
                 </Field>
@@ -186,6 +211,13 @@ function Form({ products }) {
                   <span className={left === 0 || (left !== null && Number(line.quantity) > left) ? 'text-red-700' : 'text-mulberry/60'}>
                     {left === null ? '' : left === 0 ? 'Sold out' : `${left} in stock`}
                   </span>
+                  {/* the price of this line: quantity x price each */}
+                  {p && (
+                    <span className="ml-auto">
+                      {Number(line.quantity) > 1 && <span className="text-mulberry/60">{line.quantity} × {formatPrice(priceOf(line))} = </span>}
+                      <strong>{formatPrice(priceOf(line) * Number(line.quantity || 0))}</strong>
+                    </span>
+                  )}
                   {lines.length > 1 && (
                     <button type="button" onClick={() => setLines(lines.filter((_, j) => j !== i))}
                       className="text-red-700 hover:underline">Remove</button>
