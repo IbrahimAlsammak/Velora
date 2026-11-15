@@ -18,6 +18,7 @@ import AdminOrderDetail from './pages/admin/OrderDetail.jsx'
 import AdminOrders from './pages/admin/Orders.jsx'
 import AdminProductForm from './pages/admin/ProductForm.jsx'
 import AdminProducts from './pages/admin/Products.jsx'
+import ManualOrder from './pages/admin/ManualOrder.jsx'
 import Reports from './pages/admin/Reports.jsx'
 import AccountLayout from './pages/account/AccountLayout.jsx'
 import MyOrders from './pages/account/MyOrders.jsx'
@@ -72,6 +73,7 @@ export default function App() {
           <Route index element={<Dashboard />} />
           <Route path="reports" element={<Reports />} />
           <Route path="orders" element={<AdminOrders />} />
+          <Route path="orders/new" element={<ManualOrder />} />
           <Route path="orders/:orderNumber" element={<AdminOrderDetail />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="products/new" element={<AdminProductForm />} />

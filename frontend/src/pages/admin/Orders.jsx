@@ -4,6 +4,7 @@ import { Card, ErrorBox, Loading, PageHeader, StatusBadge } from '../../componen
 import useLoad from '../../hooks/useLoad.js'
 import formatDate from '../../utils/formatDate.js'
 import formatPrice from '../../utils/formatPrice.js'
+import { ORDER_SOURCES, isManual } from '../../utils/orderSources.js'
 import { placeLabel } from '../../utils/regions.js'
 
 const FILTERS = ['', 'PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED']
@@ -18,7 +19,13 @@ export default function Orders() {
 
   return (
     <>
-      <PageHeader title="Orders" subtitle="Click an order to see the customer's details and change its status" />
+      <PageHeader title="Orders" subtitle="Click an order to see the customer's details and change its status">
+        {/* For sales made in a WhatsApp / Instagram chat */}
+        <Link to="/admin/orders/new"
+          className="self-center rounded-full bg-mulberry px-5 py-2 text-sm tracking-wider text-cream hover:bg-gold">
+          + Manual order
+        </Link>
+      </PageHeader>
 
       <div className="mb-6 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
@@ -58,10 +65,11 @@ export default function Orders() {
                     className="cursor-pointer hover:bg-gold-light/15">
                     <td className="px-5 py-3 font-medium">
                       <Link to={`/admin/orders/${o.orderNumber}`} className="hover:text-gold">{o.orderNumber}</Link>
+                      {isManual(o) && <SourceBadge source={o.source} />}
                     </td>
                     <td className="px-5 py-3 text-mulberry/70">{formatDate(o.createdAt)}</td>
                     <td className="px-5 py-3">{o.customerName}</td>
-                    <td className="px-5 py-3 text-mulberry/70">{placeLabel(o)}</td>
+                    <td className="px-5 py-3 text-mulberry/70">{o.city ? placeLabel(o) : '—'}</td>
                     <td className="px-5 py-3 text-center">{o.itemCount}</td>
                     <td className="px-5 py-3 text-right font-medium">{formatPrice(o.total)}</td>
                     <td className="px-5 py-3 text-mulberry/70">{o.paymentMethod === 'WHISH_TRANSFER' ? 'Whish' : 'Cash'}</td>
@@ -74,5 +82,15 @@ export default function Orders() {
         </Card>
       )}
     </>
+  )
+}
+
+/** Small tag under the order number: where you sold it (for manual orders) */
+function SourceBadge({ source }) {
+  const s = ORDER_SOURCES[source]
+  return (
+    <span className="mt-1 block w-fit rounded-full bg-gold-light/40 px-2 py-0.5 text-[11px] font-normal tracking-wide">
+      {s?.icon} {s?.label ?? source}
+    </span>
   )
 }

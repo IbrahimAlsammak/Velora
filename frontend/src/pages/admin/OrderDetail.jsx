@@ -8,6 +8,7 @@ import formatDate from '../../utils/formatDate.js'
 import formatPrice from '../../utils/formatPrice.js'
 import { paymentLabel } from '../../utils/paymentMethods.js'
 import { callUrl, formatPhone, whatsappUrl } from '../../utils/phone.js'
+import { ORDER_SOURCES, isManual } from '../../utils/orderSources.js'
 import { regionLabel } from '../../utils/regions.js'
 
 /**
@@ -57,7 +58,10 @@ export default function OrderDetail() {
   const order = updated?.orderNumber === orderNumber ? updated : data
 
   async function setStatus(status, isReturn = false) {
-    const question = isReturn
+    const question = isReturn && isManual(order)
+      ? 'Cancel this sale? Use this if you entered it by mistake or the customer gave the items back. ' +
+        'The items go back into stock and it leaves the sales report. This cannot be undone.'
+      : isReturn
       ? 'Did the customer send the items back? The order will be marked as cancelled and the items ' +
         'put back into stock. Remember to refund the customer. This cannot be undone.'
       : 'Cancel this order? The items will be put back into stock. This cannot be undone.'
@@ -94,8 +98,11 @@ export default function OrderDetail() {
   if (error && !order) return <ErrorBox message={error} />
   if (!order) return null
 
+  const manual = isManual(order) // a sale you entered yourself (WhatsApp / Instagram)
+  const soldOn = ORDER_SOURCES[order.source]?.label ?? order.source
   const next = NEXT_STEP[order.paymentMethod]?.[order.status]
-  const previous = PREVIOUS_STEP[order.paymentMethod]?.[order.status]
+  // manual sales are simply "delivered" - no steps to go back to
+  const previous = manual ? null : PREVIOUS_STEP[order.paymentMethod]?.[order.status]
   const undoButton = previous && (
     <Button variant="secondary" disabled={busy} onClick={() => setStatus(previous.status)}
       title="Pressed by mistake? Go one step back">
@@ -106,7 +113,8 @@ export default function OrderDetail() {
   return (
     <>
       <Link to="/admin/orders" className="text-sm text-gold hover:underline">← All orders</Link>
-      <PageHeader title={order.orderNumber} subtitle={`Placed ${formatDate(order.createdAt)}`}>
+      <PageHeader title={order.orderNumber}
+        subtitle={manual ? `${ORDER_SOURCES[order.source]?.icon ?? ''} Manual order - sold on ${soldOn}, entered ${formatDate(order.createdAt)}` : `Placed ${formatDate(order.createdAt)}`}>
         <StatusBadge status={order.status} />
       </PageHeader>
 
@@ -136,7 +144,16 @@ export default function OrderDetail() {
           <Button variant="danger" disabled={busy} onClick={() => setStatus('CANCELLED')}>Cancel order</Button>
         </Card>
       )}
-      {order.status === 'DELIVERED' && (
+      {order.status === 'DELIVERED' && manual && (
+        <Card className="mb-6 flex flex-wrap items-center gap-3">
+          <span className="mr-auto text-sm text-green-800">✓ Sold on {soldOn} - counted in your sales report.</span>
+          {/* Entered by mistake, or the customer gave it back: pieces go back into stock */}
+          <Button variant="danger" disabled={busy} onClick={() => setStatus('CANCELLED', true)}>
+            Cancel this sale
+          </Button>
+        </Card>
+      )}
+      {order.status === 'DELIVERED' && !manual && (
         <Card className="mb-6 flex flex-wrap items-center gap-3">
           <span className="mr-auto text-sm text-green-800">✓ This order is complete.</span>
           {undoButton}
@@ -161,12 +178,12 @@ export default function OrderDetail() {
           <h2 className="font-display text-2xl">Customer</h2>
           <dl className="mt-3 space-y-1 text-sm">
             <Row label="Name">{order.customerName}</Row>
-            <Row label="Phone"><span className="font-medium">{formatPhone(order.phone)}</span></Row>
+            <Row label="Phone">{order.phone ? <span className="font-medium">{formatPhone(order.phone)}</span> : '—'}</Row>
             {/* Older orders were placed with an email */}
             {order.email && <Row label="Email">{order.email}</Row>}
           </dl>
           {/* Contact the customer with one click */}
-          <div className="mt-4 flex flex-wrap gap-2">
+          {order.phone && <div className="mt-4 flex flex-wrap gap-2">
             <a href={whatsappUrl(order.phone)} target="_blank" rel="noreferrer"
               className="rounded-full bg-mulberry px-5 py-2 text-sm tracking-wider text-cream hover:bg-gold">
               WhatsApp
@@ -175,17 +192,19 @@ export default function OrderDetail() {
               className="rounded-full border border-gold-light px-5 py-2 text-sm tracking-wider hover:border-gold hover:text-gold">
               Call
             </a>
-          </div>
+          </div>}
         </Card>
         <Card>
-          <h2 className="font-display text-2xl">Delivery address</h2>
-          <address className="mt-3 text-sm not-italic leading-relaxed">
+          <h2 className="font-display text-2xl">{manual ? 'City' : 'Delivery address'}</h2>
+          {manual ? (
+            <p className="mt-3 text-sm">{order.city || '—'}</p>
+          ) : <address className="mt-3 text-sm not-italic leading-relaxed">
             {order.addressLine}<br />
             {[order.building && `Building: ${order.building}`, order.floor && `Floor: ${order.floor}`].filter(Boolean).join(' · ')}
             {(order.building || order.floor) && <br />}
             {order.city}{order.postalCode ? ` ${order.postalCode}` : ''}<br />
             {order.region ? `${regionLabel(order.region)}, ` : ''}{order.country}
-          </address>
+          </address>}
           {order.landmark && (
             <p className="mt-3 text-sm"><span className="text-mulberry/60">Landmark:</span> {order.landmark}</p>
           )}

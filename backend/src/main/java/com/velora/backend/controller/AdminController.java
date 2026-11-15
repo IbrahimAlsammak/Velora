@@ -19,6 +19,7 @@ import com.velora.backend.dto.AdminDtos.AdminCategory;
 import com.velora.backend.dto.AdminDtos.AdminProduct;
 import com.velora.backend.dto.AdminDtos.CategoryForm;
 import com.velora.backend.dto.AdminDtos.Dashboard;
+import com.velora.backend.dto.AdminDtos.ManualOrderForm;
 import com.velora.backend.dto.AdminDtos.OrderDetail;
 import com.velora.backend.dto.AdminDtos.OrderAlerts;
 import com.velora.backend.dto.AdminDtos.OrderSummary;
@@ -29,6 +30,7 @@ import com.velora.backend.dto.ReportDtos.SalesReport;
 import com.velora.backend.entity.OrderStatus;
 import com.velora.backend.service.AdminCatalogService;
 import com.velora.backend.service.AdminOrderService;
+import com.velora.backend.service.OrderService;
 import com.velora.backend.service.ReportService;
 
 import jakarta.validation.Valid;
@@ -38,6 +40,7 @@ import jakarta.validation.Valid;
  *
  *   GET    /api/admin/dashboard
  *   GET    /api/admin/orders?status=PENDING      GET /api/admin/orders/{number}
+ *   POST   /api/admin/orders/manual              (a sale you made on WhatsApp / Instagram)
  *   PATCH  /api/admin/orders/{number}/status
  *   GET    /api/admin/products                   GET /api/admin/products/{id}
  *   POST   /api/admin/products                   PUT /api/admin/products/{id}     DELETE /api/admin/products/{id}
@@ -50,11 +53,14 @@ public class AdminController {
     private final AdminOrderService orders;
     private final AdminCatalogService catalog;
     private final ReportService reports;
+    private final OrderService orderService;
 
-    public AdminController(AdminOrderService orders, AdminCatalogService catalog, ReportService reports) {
+    public AdminController(AdminOrderService orders, AdminCatalogService catalog, ReportService reports,
+                           OrderService orderService) {
         this.orders = orders;
         this.catalog = catalog;
         this.reports = reports;
+        this.orderService = orderService;
     }
 
     // ---------- Dashboard ----------
@@ -80,6 +86,13 @@ public class AdminController {
     @GetMapping("/orders")
     public List<OrderSummary> orders(@RequestParam(required = false) OrderStatus status) {
         return orders.list(status);
+    }
+
+    /** A sale you made yourself (WhatsApp / Instagram) - saved as delivered, stock goes down. */
+    @PostMapping("/orders/manual")
+    @ResponseStatus(HttpStatus.CREATED)
+    public OrderDetail createManualOrder(@Valid @RequestBody ManualOrderForm form) {
+        return OrderDetail.from(orderService.placeManualOrder(form));
     }
 
     @GetMapping("/orders/{orderNumber}")

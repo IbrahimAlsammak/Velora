@@ -50,6 +50,11 @@ public class Order {
     @Column(nullable = false, length = 30, columnDefinition = "varchar(30) default 'CASH_ON_DELIVERY'")
     private PaymentMethod paymentMethod = PaymentMethod.CASH_ON_DELIVERY;
 
+    /** Where the order came from: the website, or a sale you entered yourself (WhatsApp, Instagram...). */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20, columnDefinition = "varchar(20) default 'WEBSITE'")
+    private OrderSource source = OrderSource.WEBSITE;
+
     /** The customer's account, if they were logged in. null = guest checkout. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -58,12 +63,12 @@ public class Order {
     // ----- Customer & delivery details -----
     @Column(nullable = false, length = 120) private String customerName;
     @Column(length = 160)                   private String email;   // older orders only - we contact customers by phone
-    @Column(nullable = false, length = 30)  private String phone;
+    @Column(length = 30)                    private String phone;        // can be empty for a manual order
     /** Area of Lebanon (empty for very old orders placed before this field existed). */
     @Enumerated(EnumType.STRING)
     @Column(length = 30)                    private Region region;
-    @Column(nullable = false, length = 100) private String city;         // city / town, e.g. Jounieh
-    @Column(nullable = false, length = 250) private String addressLine;  // street / neighbourhood
+    @Column(length = 100)                   private String city;         // city / town, e.g. Jounieh (can be empty for a manual order)
+    @Column(length = 250)                   private String addressLine;  // street / neighbourhood (can be empty for a manual order)
     @Column(length = 120)                   private String building;     // building name or number
     @Column(length = 30)                    private String floor;
     @Column(length = 200)                   private String landmark;     // "next to Spinneys", helps the driver

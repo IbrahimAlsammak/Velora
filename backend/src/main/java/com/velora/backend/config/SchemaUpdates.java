@@ -36,5 +36,10 @@ public class SchemaUpdates implements CommandLineRunner {
 
         // Products can now be deleted even if they were ordered - old order lines then lose the link
         jdbc.execute("ALTER TABLE order_items MODIFY product_id BIGINT NULL");
+
+        // Manual orders (sold on WhatsApp / Instagram) may have no phone or address
+        jdbc.execute("ALTER TABLE orders MODIFY phone VARCHAR(30) NULL");
+        jdbc.execute("ALTER TABLE orders MODIFY city VARCHAR(100) NULL");
+        jdbc.execute("ALTER TABLE orders MODIFY address_line VARCHAR(250) NULL");
     }
 }

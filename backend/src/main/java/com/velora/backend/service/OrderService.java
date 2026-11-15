@@ -14,11 +14,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.velora.backend.dto.AdminDtos.ManualItem;
+import com.velora.backend.dto.AdminDtos.ManualOrderForm;
 import com.velora.backend.dto.CreateOrderRequest;
 import com.velora.backend.dto.DeliveryDtos.Quote;
 import com.velora.backend.dto.OrderDto;
 import com.velora.backend.entity.Order;
 import com.velora.backend.entity.OrderItem;
+import com.velora.backend.entity.OrderSource;
+import com.velora.backend.entity.OrderStatus;
 import com.velora.backend.entity.PaymentMethod;
 import com.velora.backend.entity.Product;
 import com.velora.backend.entity.VariantStock;
@@ -92,39 +96,8 @@ public class OrderService {
             Product product = locked.computeIfAbsent(line.productId(), id ->
                     productRepository.findByIdForUpdate(id).filter(Product::isActive).orElseThrow(() ->
                             new ResponseStatusException(HttpStatus.BAD_REQUEST, "A product in your bag no longer exists.")));
-
-            String color = checkColor(product, line.color());
-            String size = checkSize(product, line.size());
-
-            // Products with colours/sizes: check the stock of THIS colour + size only
-            VariantStock variant = product.hasOptions()
-                    ? product.findVariant(color, size).orElse(new VariantStock(color, size, 0))
-                    : null;
-            int available = variant != null ? variant.getStock() : product.getStock();
-            if (available < line.quantity()) {
-                String what = product.getName() + optionsText(color, size);
-                String msg = available == 0 ? what + " is sold out." : "Only " + available + " left of " + what + ".";
-                throw new ResponseStatusException(HttpStatus.CONFLICT, msg);
-            }
-            if (variant != null) {
-                variant.setStock(variant.getStock() - line.quantity());
-                product.recountStock();
-            } else {
-                product.setStock(product.getStock() - line.quantity());
-            } // saved automatically
-
-            BigDecimal lineTotal = product.getPrice().multiply(BigDecimal.valueOf(line.quantity()));
-            subtotal = subtotal.add(lineTotal);
-
-            OrderItem item = new OrderItem();
-            item.setProduct(product);
-            item.setProductName(product.getName());
-            item.setColor(color);
-            item.setSize(size);
-            item.setQuantity(line.quantity());
-            item.setUnitPrice(product.getPrice());   // price from OUR database, not the browser
-            item.setLineTotal(lineTotal);
-            order.addItem(item);
+            // price from OUR database, not the browser
+            subtotal = subtotal.add(takeFromStock(order, product, line.color(), line.size(), line.quantity(), product.getPrice()));
         }
 
         order.setSubtotal(subtotal);
@@ -140,6 +113,90 @@ public class OrderService {
         // Tell the owner's phone (Telegram) - sent only once the order is really saved
         events.publishEvent(new NewOrderEvent(newOrderMessage(saved)));
         return OrderDto.from(saved);
+    }
+
+    /**
+     * A sale you made yourself on WhatsApp / Instagram (admin only).
+     * Saved straight away as DELIVERED: the pieces leave the stock and it counts in the sales report.
+     * No Telegram message - you entered it yourself. Works even while the shop is under maintenance.
+     */
+    @Transactional
+    public Order placeManualOrder(ManualOrderForm form) {
+        if (form.source() == OrderSource.WEBSITE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Choose WhatsApp, Instagram or Other.");
+        }
+        Order order = new Order();
+        order.setOrderNumber(newOrderNumber());
+        order.setSource(form.source());
+        order.setStatus(OrderStatus.DELIVERED);
+        order.setCustomerName(form.customerName().trim());
+        String phone = blankToNull(form.phone());
+        if (phone != null) {
+            order.setPhone(Phones.normalizeLebanese(phone).orElseThrow(() ->
+                    new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "The phone number doesn't look right, e.g. 03 123 456 (or leave it empty).")));
+        }
+        order.setCity(blankToNull(form.city()));
+        order.setCountry(DELIVERY_COUNTRY);
+        order.setNotes(blankToNull(form.notes()));
+        order.setPaymentMethod(form.paymentMethod());
+
+        Map<Long, Product> locked = new HashMap<>();
+        BigDecimal subtotal = BigDecimal.ZERO;
+        for (ManualItem line : form.items()) {
+            // hidden products (not "Visible in shop") can be sold too
+            Product product = locked.computeIfAbsent(line.productId(), id ->
+                    productRepository.findByIdForUpdate(id).orElseThrow(() ->
+                            new ResponseStatusException(HttpStatus.BAD_REQUEST, "One of the products no longer exists.")));
+            BigDecimal price = line.price() != null ? line.price() : product.getPrice(); // the price agreed in the chat
+            subtotal = subtotal.add(takeFromStock(order, product, line.color(), line.size(), line.quantity(), price));
+        }
+
+        BigDecimal delivery = form.deliveryFee() != null ? form.deliveryFee() : BigDecimal.ZERO;
+        order.setSubtotal(subtotal);
+        order.setShippingCost(delivery);
+        order.setTotal(subtotal.add(delivery));
+        return orderRepository.save(order);
+    }
+
+    /**
+     * Takes the pieces out of stock (of exactly this colour + size) and adds the line to the order.
+     * Not enough pieces -> error, and (thanks to @Transactional) nothing at all is saved.
+     * @return the line total (price x quantity)
+     */
+    private BigDecimal takeFromStock(Order order, Product product, String colorChoice, String sizeChoice,
+                                     int quantity, BigDecimal unitPrice) {
+        String color = checkColor(product, colorChoice);
+        String size = checkSize(product, sizeChoice);
+
+        // Products with colours/sizes: check the stock of THIS colour + size only
+        VariantStock variant = product.hasOptions()
+                ? product.findVariant(color, size).orElse(new VariantStock(color, size, 0))
+                : null;
+        int available = variant != null ? variant.getStock() : product.getStock();
+        if (available < quantity) {
+            String what = product.getName() + optionsText(color, size);
+            String msg = available == 0 ? what + " is sold out." : "Only " + available + " left of " + what + ".";
+            throw new ResponseStatusException(HttpStatus.CONFLICT, msg);
+        }
+        if (variant != null) {
+            variant.setStock(variant.getStock() - quantity);
+            product.recountStock();
+        } else {
+            product.setStock(product.getStock() - quantity);
+        } // saved automatically
+
+        BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        OrderItem item = new OrderItem();
+        item.setProduct(product);
+        item.setProductName(product.getName());
+        item.setColor(color);
+        item.setSize(size);
+        item.setQuantity(quantity);
+        item.setUnitPrice(unitPrice);
+        item.setLineTotal(lineTotal);
+        order.addItem(item);
+        return lineTotal;
     }
 
     /** The text of the "new order" phone message. */

@@ -6,7 +6,9 @@ import java.util.List;
 
 import com.velora.backend.entity.Category;
 import com.velora.backend.entity.Order;
+import com.velora.backend.entity.OrderSource;
 import com.velora.backend.entity.OrderStatus;
+import com.velora.backend.entity.PaymentMethod;
 import com.velora.backend.entity.Product;
 
 import jakarta.validation.Valid;
@@ -15,6 +17,7 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -40,22 +43,22 @@ public final class AdminDtos {
     /** For the new-order alert: how many orders wait (pending) + the 5 newest orders. */
     public record OrderAlerts(long pendingOrders, List<OrderSummary> newestOrders) {}
 
-    public record OrderSummary(String orderNumber, String status, String paymentMethod, Instant createdAt, String customerName,
+    public record OrderSummary(String orderNumber, String status, String paymentMethod, String source, Instant createdAt, String customerName,
                                String city, String region, String country, int itemCount, BigDecimal total) {
         public static OrderSummary from(Order o) {
             int count = o.getItems().stream().mapToInt(i -> i.getQuantity()).sum();
-            return new OrderSummary(o.getOrderNumber(), o.getStatus().name(), o.getPaymentMethod().name(), o.getCreatedAt(), o.getCustomerName(),
+            return new OrderSummary(o.getOrderNumber(), o.getStatus().name(), o.getPaymentMethod().name(), o.getSource().name(), o.getCreatedAt(), o.getCustomerName(),
                     o.getCity(), o.getRegion() == null ? null : o.getRegion().name(), o.getCountry(), count, o.getTotal());
         }
     }
 
-    public record OrderDetail(String orderNumber, String status, String paymentMethod, Instant createdAt,
+    public record OrderDetail(String orderNumber, String status, String paymentMethod, String source, Instant createdAt,
                               String customerName, String email, String phone,
                               String region, String city, String addressLine, String building, String floor,
                               String landmark, String postalCode, String country, String notes,
                               List<OrderDto.Line> items, BigDecimal subtotal, BigDecimal shippingCost, BigDecimal total) {
         public static OrderDetail from(Order o) {
-            return new OrderDetail(o.getOrderNumber(), o.getStatus().name(), o.getPaymentMethod().name(), o.getCreatedAt(),
+            return new OrderDetail(o.getOrderNumber(), o.getStatus().name(), o.getPaymentMethod().name(), o.getSource().name(), o.getCreatedAt(),
                     o.getCustomerName(), o.getEmail(), o.getPhone(),
                     o.getRegion() == null ? null : o.getRegion().name(), o.getCity(), o.getAddressLine(),
                     o.getBuilding(), o.getFloor(), o.getLandmark(), o.getPostalCode(), o.getCountry(), o.getNotes(),
@@ -66,6 +69,28 @@ public final class AdminDtos {
     }
 
     public record StatusChange(@NotNull(message = "Choose a status") OrderStatus status) {}
+
+    /**
+     * A sale you made yourself on WhatsApp / Instagram. It is saved straight away as DELIVERED
+     * and the pieces leave the stock. Phone and city are optional.
+     */
+    public record ManualOrderForm(
+            @NotNull(message = "Choose where you sold it") OrderSource source,
+            @NotBlank(message = "Enter the customer's name") @Size(max = 120) String customerName,
+            @Size(max = 30) String phone,
+            @Size(max = 100) String city,
+            @Size(max = 500) String notes,
+            @NotNull(message = "Choose how the customer paid") PaymentMethod paymentMethod,
+            @DecimalMin(value = "0", message = "Delivery can't be below 0") @Digits(integer = 6, fraction = 2) BigDecimal deliveryFee,
+            @NotEmpty(message = "Add at least one product") @Size(max = 50) List<@Valid ManualItem> items) {}
+
+    /** One product of a manual sale. price = the price you agreed in the chat (empty = the normal price). */
+    public record ManualItem(
+            @NotNull Long productId,
+            String color,
+            String size,
+            @Min(value = 1, message = "Quantity must be at least 1") @Max(100) int quantity,
+            @DecimalMin(value = "0", message = "Price can't be below 0") @Digits(integer = 6, fraction = 2) BigDecimal price) {}
 
     // ================= Products =================
 
