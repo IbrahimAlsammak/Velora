@@ -1,0 +1,76 @@
+# The whole shop in 3 Docker "boxes" that start together with:  docker compose up -d --build
+#   mysql   = the database (products, orders, customers)
+#   backend = Spring Boot (orders, admin, login, Telegram)
+#   web     = Caddy: the website + https, passes /api and /uploads to the backend
+# Settings and passwords come from the file ".env" (next to this file, never uploaded to GitHub).
+# Tuned to fit a small 2 GB server.
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped        # starts again by itself after a crash or a server reboot
+    environment:
+      MYSQL_DATABASE: velora
+      MYSQL_USER: velora
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    # small-server settings: less memory for MySQL
+    command:
+      - --innodb-buffer-pool-size=128M
+      - --performance-schema=OFF
+      - --max-connections=40
+      - --skip-name-resolve
+    volumes:
+      - mysql-data:/var/lib/mysql  # the database files - kept when boxes are rebuilt
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    mem_limit: 512m
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy # wait until the database is ready
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/velora?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: velora
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      VELORA_JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      VELORA_ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL in .env}
+      VELORA_ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      VELORA_ADMIN_NAME: ${ADMIN_NAME:-Velora Admin}
+      VELORA_TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      VELORA_TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      VELORA_FRONTEND_URL: ${PUBLIC_URL:-http://localhost}
+      VELORA_UPLOAD_DIR: /app/uploads
+      VELORA_SAMPLE_DATA: "false"  # never add sample products on the real shop
+      # Java memory: at most 70% of the box's 640 MB, light garbage collector for small servers
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70 -XX:+UseSerialGC -Xss512k
+    volumes:
+      - uploads:/app/uploads       # product + banner photos - kept when boxes are rebuilt
+    mem_limit: 640m
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    volumes:
+      - caddy-data:/data           # the https certificates
+      - caddy-config:/config
+    mem_limit: 128m
+
+volumes:
+  mysql-data:
+  uploads:
+  caddy-data:
+  caddy-config:

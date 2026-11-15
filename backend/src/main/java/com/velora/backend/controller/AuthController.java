@@ -16,6 +16,7 @@ import com.velora.backend.dto.AuthDtos.RegisterRequest;
 import com.velora.backend.dto.AuthDtos.UserDto;
 import com.velora.backend.service.AuthService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 /**
@@ -35,8 +36,9 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
-        return authService.login(request);
+    public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
+        // getRemoteAddr = the visitor's internet address (the real one, also behind the web server - see server.forward-headers-strategy)
+        return authService.login(request, http.getRemoteAddr());
     }
 
     @PostMapping("/register")

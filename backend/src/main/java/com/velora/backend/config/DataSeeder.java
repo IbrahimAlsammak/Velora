@@ -3,6 +3,7 @@ package com.velora.backend.config;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,15 +76,19 @@ public class DataSeeder implements CommandLineRunner {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
 
-    public DataSeeder(CategoryRepository categoryRepository, ProductRepository productRepository) {
+    private final boolean enabled;
+
+    public DataSeeder(CategoryRepository categoryRepository, ProductRepository productRepository,
+                      @Value("${velora.sample-data:true}") boolean enabled) {
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
+        this.enabled = enabled;
     }
 
     @Override
     @Transactional
     public void run(String... args) {
-        if (categoryRepository.count() > 0) {
+        if (!enabled || categoryRepository.count() > 0) {
             return; // the shop already has data - leave it exactly as the admin made it
         }
         CATEGORIES.forEach(this::addCategoryWithSamples);

@@ -1,0 +1,3 @@
+# Files NOT copied into the Docker box
+node_modules/
+dist/

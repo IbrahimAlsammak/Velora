@@ -35,8 +35,10 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
+    private final LoginAttemptService loginAttempts;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtEncoder jwtEncoder, LoginAttemptService loginAttempts) {
+        this.loginAttempts = loginAttempts;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtEncoder = jwtEncoder;
@@ -44,17 +46,24 @@ public class AuthService {
 
     /** Customers log in with their phone number, the admin with their email. */
     @Transactional(readOnly = true)
-    public AuthResponse login(LoginRequest request) {
+    /**
+     * address = the visitor's internet address (IP), for the login protection.
+     */
+    public AuthResponse login(LoginRequest request, String address) {
         String login = request.login().trim();
+        String account = login.toLowerCase();
+        loginAttempts.checkAllowed(account, address); // paused after too many wrong passwords
         Optional<User> found = login.contains("@")
                 ? userRepository.findByEmailIgnoreCase(login)
                 : Phones.normalizeLebanese(login).flatMap(userRepository::findByPhone);
-        User user = found
-                .filter(u -> passwordEncoder.matches(request.password(), u.getPasswordHash()))
-                // Same message for "no such account" and "wrong password" - don't help attackers guess
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "Wrong phone number or password."));
-        return new AuthResponse(createToken(user), UserDto.from(user));
+        Optional<User> user = found.filter(u -> passwordEncoder.matches(request.password(), u.getPasswordHash()));
+        if (user.isEmpty()) {
+            loginAttempts.recordFailure(account, address);
+            // Same message for "no such account" and "wrong password" - don't help attackers guess
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong phone number or password.");
+        }
+        loginAttempts.recordSuccess(account);
+        return new AuthResponse(createToken(user.get()), UserDto.from(user.get()));
     }
 
     /** Sign up as a new CUSTOMER with a Lebanese phone number, and log them in straight away. */

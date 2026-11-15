@@ -1,0 +1,5 @@
+# Files NOT copied into the Docker box
+target/
+uploads/
+# 🔒 never put secrets inside the box - on the server they come from the .env file
+src/main/resources/application-secrets.properties
