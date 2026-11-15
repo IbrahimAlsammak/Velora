@@ -182,7 +182,8 @@ function Form({ products }) {
                     }}>
                       <option value="">Choose…</option>
                       {p.colors.map((c) => {
-                        const ok = colorInStock(p, c.name, line.size)
+                        // colour first: greyed out only if it is sold out in EVERY size
+                        const ok = colorInStock(p, c.name, null)
                         return <option key={c.name} value={c.name} disabled={!ok}>{c.name}{ok ? '' : ' (sold out)'}</option>
                       })}
                     </select>
@@ -190,8 +191,10 @@ function Form({ products }) {
                 )}
                 {p?.sizes.length > 0 && (
                   <Field label="Size" className="sm:col-span-2">
-                    <select className={inputClass} value={line.size} onChange={(e) => updateLine(i, { size: e.target.value })}>
-                      <option value="">Choose…</option>
+                    {/* size second: locked until a colour is chosen, then shows that colour's sizes */}
+                    <select className={inputClass} value={line.size} disabled={p.colors.length > 0 && !line.color}
+                      onChange={(e) => updateLine(i, { size: e.target.value })}>
+                      <option value="">{p.colors.length > 0 && !line.color ? 'Colour first' : 'Choose…'}</option>
                       {p.sizes.map((s) => {
                         const ok = sizeInStock(p, s, line.color)
                         return <option key={s} value={s} disabled={!ok}>{s}{ok ? '' : ' (sold out)'}</option>
