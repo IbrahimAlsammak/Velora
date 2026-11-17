@@ -5,6 +5,12 @@ import { AuthField } from '../../components/AuthCard.jsx'
 import { useAuth } from '../../context/useAuth.js'
 import { localPhone, typePhone } from '../../utils/phone.js'
 
+/** "Sara Al Khoury" -> { first: 'Sara', last: 'Al Khoury' } (the name is saved as one, shown as two boxes) */
+function splitName(fullName) {
+  const [first = '', ...rest] = (fullName ?? '').trim().split(/s+/)
+  return { first, last: rest.join(' ') }
+}
+
 /** Change name + phone number. */
 export default function PersonalInfo() {
   const { user } = useAuth()
@@ -14,16 +20,26 @@ export default function PersonalInfo() {
 
 function DetailsForm() {
   const { user, updateUser } = useAuth()
-  const [fullName, setFullName] = useState(user.fullName)
+  const [firstName, setFirstName] = useState(splitName(user.fullName).first)
+  const [lastName, setLastName] = useState(splitName(user.fullName).last)
+  const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()
   const [phone, setPhone] = useState(localPhone(user.phone))
   const [fieldErrors, setFieldErrors] = useState({})
   const [message, setMessage] = useState(null)
   const [busy, setBusy] = useState(false)
 
-  const changed = fullName.trim() !== user.fullName || phone.trim() !== localPhone(user.phone)
+  const changed = fullName !== user.fullName || phone.trim() !== localPhone(user.phone)
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const missing = {}
+    if (!firstName.trim()) missing.firstName = 'Please enter your first name'
+    if (!lastName.trim()) missing.lastName = 'Please enter your last name'
+    if (Object.keys(missing).length) {
+      setFieldErrors(missing)
+      setMessage({ ok: false, text: 'Please check the fields above.' })
+      return
+    }
     setBusy(true)
     setMessage(null)
     setFieldErrors({})
@@ -45,8 +61,12 @@ function DetailsForm() {
       <p className="mt-1 text-sm text-mulberry/60">This is how we know you and how we reach you about your orders.</p>
 
       <form onSubmit={handleSubmit} noValidate className="mt-6 max-w-xl rounded-2xl border border-gold-light bg-white/70 p-6 md:p-8">
-        <AuthField label="Full name" autoComplete="name" value={fullName} error={fieldErrors.fullName}
-          onChange={(e) => setFullName(e.target.value)} />
+        <div className="grid gap-x-4 sm:grid-cols-2">
+          <AuthField label="First name" autoComplete="given-name" value={firstName}
+            error={fieldErrors.firstName ?? fieldErrors.fullName} onChange={(e) => setFirstName(e.target.value)} />
+          <AuthField label="Last name" autoComplete="family-name" value={lastName}
+            error={fieldErrors.lastName} onChange={(e) => setLastName(e.target.value)} />
+        </div>
         <AuthField label="Phone number" type="tel" autoComplete="tel" placeholder="e.g. 03 123 456"
           value={phone} error={fieldErrors.phone} onChange={(e) => setPhone(typePhone(e.target.value))} />
         <p className="-mt-2 mb-6 text-xs text-mulberry/60">
