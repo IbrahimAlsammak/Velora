@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
-import { changeOrderStatus, deleteOrder, getAdminOrder } from '../../api/admin.js'
+import { changeDeliveryFee, changeOrderStatus, deleteOrder, getAdminOrder } from '../../api/admin.js'
 import { errorMessage } from '../../api/client.js'
 import { Button, Card, ErrorBox, Loading, PageHeader, StatusBadge } from '../../components/admin/ui.jsx'
 import useLoad from '../../hooks/useLoad.js'
@@ -247,8 +247,8 @@ export default function OrderDetail() {
           </tbody>
         </table>
         <dl className="ml-auto mt-4 max-w-xs space-y-1 border-t border-gold-light pt-3 text-sm">
-          <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatPrice(order.subtotal)}</dd></div>
-          <div className="flex justify-between"><dt>Delivery</dt><dd>{order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Free'}</dd></div>
+          <div className="flex justify-between"><dt>Products</dt><dd>{formatPrice(order.subtotal)}</dd></div>
+          <DeliveryRow order={order} onSaved={setUpdated} />
           <div className="flex justify-between text-base font-medium"><dt>Total</dt><dd>{formatPrice(order.total)}</dd></div>
         </dl>
       </Card>
@@ -261,6 +261,69 @@ function Row({ label, children }) {
     <div className="flex gap-3">
       <dt className="w-16 shrink-0 text-mulberry/60">{label}</dt>
       <dd>{children}</dd>
+    </div>
+  )
+}
+
+/**
+ * The delivery line, with "Edit" to change the fee of this order only.
+ * Example: the customer orders again and you deliver both together -> set this one to 0.
+ */
+function DeliveryRow({ order, onSaved }) {
+  const [editing, setEditing] = useState(false)
+  const [fee, setFee] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  function start() {
+    setFee(String(order.shippingCost))
+    setError(null)
+    setEditing(true)
+  }
+
+  async function save() {
+    if (fee === '' || Number(fee) < 0) {
+      setError('Enter an amount (0 for free).')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      onSaved(await changeDeliveryFee(order.orderNumber, Number(fee)))
+      setEditing(false)
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="flex justify-between gap-3">
+        <dt>
+          Delivery
+          {order.status !== 'CANCELLED' && (
+            <button type="button" onClick={start} className="ml-2 text-xs text-gold hover:underline">Edit</button>
+          )}
+        </dt>
+        <dd>{order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Free'}</dd>
+      </div>
+    )
+  }
+  return (
+    <div className="rounded-lg bg-gold-light/20 p-3">
+      <label className="block text-xs text-mulberry/70">
+        Delivery fee for this order ($)
+        <input type="number" min={0} step="0.01" value={fee} autoFocus onChange={(e) => setFee(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-gold-light bg-white px-3 py-1.5 outline-none focus:border-gold" />
+      </label>
+      <p className="mt-1 text-xs text-mulberry/60">One delivery for several orders? Put 0 on the extra ones.</p>
+      {error && <p className="mt-1 text-xs text-red-700">{error}</p>}
+      <div className="mt-2 flex gap-2">
+        <Button disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</Button>
+        <Button variant="secondary" disabled={busy} onClick={() => setEditing(false)}>Cancel</Button>
+      </div>
     </div>
   )
 }

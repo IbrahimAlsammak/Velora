@@ -103,6 +103,8 @@ function confirmOnWhatsappUrl(order) {
   const message = [
     `Hi Velora, I confirm my order ${order.orderNumber} 💜`,
     `Name: ${order.customerName}`,
+    `Products: ${formatPrice(order.subtotal)}`,
+    `Delivery: ${order.shippingCost > 0 ? formatPrice(order.shippingCost) : 'Free'}`,
     `Total: ${formatPrice(order.total)}`,
   ].join('\n')
   return `${whatsappUrl(STORE.whatsapp)}?text=${encodeURIComponent(message)}`

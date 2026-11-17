@@ -29,7 +29,8 @@ import com.velora.backend.repository.OrderRepository;
 
 /**
  * The admin "Sales report": sales and orders per day / week / month.
- * Only DELIVERED orders count as sales (pending, paid, shipped and cancelled don't). Days are counted in the store's time zone (Lebanon).
+ * Only DELIVERED orders count as sales (pending, paid, shipped and cancelled don't), and only the
+ * products - the delivery fee is not counted. Days are counted in the store's time zone (Lebanon).
  */
 @Service
 @Transactional(readOnly = true)
@@ -61,7 +62,7 @@ public class ReportService {
         }
         LocalDate firstStart = buckets.keySet().iterator().next();
 
-        // Shipped + delivered orders since the first bar
+        // Delivered orders since the first bar
         List<Order> orders = orderRepository.findByCreatedAtGreaterThanEqualAndStatusIn(
                 firstStart.atStartOfDay(zone).toInstant(), SOLD);
 
@@ -72,8 +73,9 @@ public class ReportService {
             Totals bucket = buckets.get(bucketStart(day, period));
             if (bucket == null) continue;
             int items = o.getItems().stream().mapToInt(OrderItem::getQuantity).sum();
-            bucket.add(o.getTotal(), items);
-            total.add(o.getTotal(), items);
+            // products only - the delivery fee is not a sale
+            bucket.add(o.getSubtotal(), items);
+            total.add(o.getSubtotal(), items);
             for (OrderItem item : o.getItems()) {
                 products.computeIfAbsent(item.getProductName(), k -> new TopTotals())
                         .add(item.getQuantity(), item.getLineTotal());

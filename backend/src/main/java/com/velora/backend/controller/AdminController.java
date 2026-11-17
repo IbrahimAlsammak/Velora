@@ -19,6 +19,7 @@ import com.velora.backend.dto.AdminDtos.AdminCategory;
 import com.velora.backend.dto.AdminDtos.AdminProduct;
 import com.velora.backend.dto.AdminDtos.CategoryForm;
 import com.velora.backend.dto.AdminDtos.Dashboard;
+import com.velora.backend.dto.AdminDtos.DeliveryFeeChange;
 import com.velora.backend.dto.AdminDtos.ManualOrderForm;
 import com.velora.backend.dto.AdminDtos.OrderDetail;
 import com.velora.backend.dto.AdminDtos.OrderAlerts;
@@ -103,6 +104,12 @@ public class AdminController {
     @PatchMapping("/orders/{orderNumber}/status")
     public OrderDetail changeStatus(@PathVariable String orderNumber, @Valid @RequestBody StatusChange body) {
         return orders.changeStatus(orderNumber, body.status());
+    }
+
+    /** PATCH /api/admin/orders/{number}/delivery  { "fee": 0 }  -> e.g. one delivery for two orders */
+    @PatchMapping("/orders/{orderNumber}/delivery")
+    public OrderDetail changeDeliveryFee(@PathVariable String orderNumber, @Valid @RequestBody DeliveryFeeChange body) {
+        return orders.changeDeliveryFee(orderNumber, body.fee());
     }
 
     @DeleteMapping("/orders/{orderNumber}")

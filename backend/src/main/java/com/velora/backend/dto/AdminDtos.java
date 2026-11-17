@@ -70,6 +70,12 @@ public final class AdminDtos {
 
     public record StatusChange(@NotNull(message = "Choose a status") OrderStatus status) {}
 
+    /** A new delivery fee for one order, e.g. 0 when it travels with the customer's other order. */
+    public record DeliveryFeeChange(
+            @NotNull(message = "Enter a delivery fee (0 for free)")
+            @DecimalMin(value = "0", message = "Delivery can't be below 0")
+            @Digits(integer = 6, fraction = 2, message = "Use an amount like 4 or 3.50") BigDecimal fee) {}
+
     /**
      * A sale you made yourself on WhatsApp / Instagram. It is saved straight away as DELIVERED
      * and the pieces leave the stock. Phone and city are optional.

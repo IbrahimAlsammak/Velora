@@ -1,5 +1,6 @@
 package com.velora.backend.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -99,6 +100,21 @@ public class AdminOrderService {
             }
         }
         order.setStatus(newStatus);
+        return OrderDetail.from(order);
+    }
+
+    /**
+     * Change the delivery fee of one order. Example: a customer orders twice and you deliver both
+     * together -> set the second order's delivery to 0. The total changes; the products don't.
+     */
+    @Transactional
+    public OrderDetail changeDeliveryFee(String orderNumber, BigDecimal fee) {
+        Order order = find(orderNumber);
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This order is cancelled - its delivery can't be changed.");
+        }
+        order.setShippingCost(fee);
+        order.setTotal(order.getSubtotal().add(fee));
         return OrderDetail.from(order);
     }
 

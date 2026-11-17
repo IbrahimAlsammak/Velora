@@ -17,6 +17,8 @@ export const getAdminOrder = (orderNumber) => data(api.get(`/admin/orders/${orde
 export const changeOrderStatus = (orderNumber, status) =>
   data(api.patch(`/admin/orders/${orderNumber}/status`, { status }))
 export const deleteOrder = (orderNumber) => api.delete(`/admin/orders/${orderNumber}`)
+// New delivery fee for one order (e.g. 0 when it goes with the customer's other order)
+export const changeDeliveryFee = (orderNumber, fee) => data(api.patch(`/admin/orders/${orderNumber}/delivery`, { fee }))
 // A sale you made on WhatsApp / Instagram - saved as delivered
 export const createManualOrder = (form) => data(api.post('/admin/orders/manual', form))
 
