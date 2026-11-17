@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { errorMessage } from '../api/client.js'
 import AuthCard, { AuthField } from '../components/AuthCard.jsx'
 import { useAuth } from '../context/useAuth.js'
+import { typePhone } from '../utils/phone.js'
 
 export default function Register() {
   const { user, register } = useAuth()
@@ -44,7 +45,7 @@ export default function Register() {
         <AuthField label="Full name" autoComplete="name" value={form.fullName} onChange={update('fullName')}
           error={fieldErrors.fullName} />
         <AuthField label="Phone number" type="tel" autoComplete="tel" placeholder="e.g. 03 123 456"
-          value={form.phone} onChange={update('phone')} error={fieldErrors.phone} />
+          value={form.phone} onChange={(e) => setForm({ ...form, phone: typePhone(e.target.value) })} error={fieldErrors.phone} />
         <AuthField label="Password (at least 8 characters)" type="password" autoComplete="new-password"
           value={form.password} onChange={update('password')} error={fieldErrors.password} />
         <AuthField label="Repeat password" type="password" autoComplete="new-password"

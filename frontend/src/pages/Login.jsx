@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { errorMessage } from '../api/client.js'
 import AuthCard, { AuthField } from '../components/AuthCard.jsx'
 import { useAuth } from '../context/useAuth.js'
+import { typePhone } from '../utils/phone.js'
 
 export default function Login() {
   const { user, login } = useAuth()
@@ -34,7 +35,7 @@ export default function Login() {
     <AuthCard title="Welcome back" subtitle="Log in to see your orders and check out faster.">
       <form onSubmit={handleSubmit}>
         <AuthField label="Phone number" type="tel" autoComplete="tel" placeholder="e.g. 03 123 456" required
-          value={phone} onChange={(e) => setPhone(e.target.value)} />
+          value={phone} onChange={(e) => setPhone(typePhone(e.target.value))} />
         <AuthField label="Password" type="password" autoComplete="current-password" required value={password}
           onChange={(e) => setPassword(e.target.value)} />
         <Link to="/forgot-password" className="-mt-2 mb-4 block text-right text-sm text-gold underline">

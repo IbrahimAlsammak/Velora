@@ -8,6 +8,7 @@ import useLoad from '../../hooks/useLoad.js'
 import formatPrice from '../../utils/formatPrice.js'
 import { ORDER_SOURCES } from '../../utils/orderSources.js'
 import { PAYMENT_METHODS } from '../../utils/paymentMethods.js'
+import { typePhone } from '../../utils/phone.js'
 
 const MANUAL_SOURCES = ['WHATSAPP', 'INSTAGRAM', 'OTHER']
 
@@ -144,7 +145,7 @@ function Form({ products }) {
         </Field>
         <Field label="Phone" hint="Optional">
           <input className={inputClass} maxLength={30} inputMode="tel" value={customer.phone} placeholder="03 123 456"
-            onChange={(e) => setCustomer({ ...customer, phone: e.target.value })} />
+            onChange={(e) => setCustomer({ ...customer, phone: typePhone(e.target.value) })} />
         </Field>
         <Field label="City" hint="Optional">
           <input className={inputClass} maxLength={100} value={customer.city} placeholder="e.g. Jounieh"

@@ -31,7 +31,7 @@ const NEXT_STEP = {
 
 /**
  * "Undo" - one step back, for when a button was pressed by mistake
- * (e.g. marked as shipped too early -> it also leaves the sales report again).
+ * (e.g. marked as delivered too early -> it also leaves the sales report again).
  */
 const PREVIOUS_STEP = {
   WHISH_TRANSFER: {

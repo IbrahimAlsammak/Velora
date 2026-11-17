@@ -3,7 +3,7 @@ import { updateProfile } from '../../api/account.js'
 import { errorMessage } from '../../api/client.js'
 import { AuthField } from '../../components/AuthCard.jsx'
 import { useAuth } from '../../context/useAuth.js'
-import { formatPhone } from '../../utils/phone.js'
+import { localPhone, typePhone } from '../../utils/phone.js'
 
 /** Change name + phone number. */
 export default function PersonalInfo() {
@@ -15,12 +15,12 @@ export default function PersonalInfo() {
 function DetailsForm() {
   const { user, updateUser } = useAuth()
   const [fullName, setFullName] = useState(user.fullName)
-  const [phone, setPhone] = useState(formatPhone(user.phone))
+  const [phone, setPhone] = useState(localPhone(user.phone))
   const [fieldErrors, setFieldErrors] = useState({})
   const [message, setMessage] = useState(null)
   const [busy, setBusy] = useState(false)
 
-  const changed = fullName.trim() !== user.fullName || phone.trim() !== formatPhone(user.phone)
+  const changed = fullName.trim() !== user.fullName || phone.trim() !== localPhone(user.phone)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -48,7 +48,7 @@ function DetailsForm() {
         <AuthField label="Full name" autoComplete="name" value={fullName} error={fieldErrors.fullName}
           onChange={(e) => setFullName(e.target.value)} />
         <AuthField label="Phone number" type="tel" autoComplete="tel" placeholder="e.g. 03 123 456"
-          value={phone} error={fieldErrors.phone} onChange={(e) => setPhone(e.target.value)} />
+          value={phone} error={fieldErrors.phone} onChange={(e) => setPhone(typePhone(e.target.value))} />
         <p className="-mt-2 mb-6 text-xs text-mulberry/60">
           You log in with this number, and we call or WhatsApp you on it about your orders.
         </p>

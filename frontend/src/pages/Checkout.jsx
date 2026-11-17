@@ -8,7 +8,7 @@ import { useCart } from '../context/useCart.js'
 import useLoad from '../hooks/useLoad.js'
 import formatPrice from '../utils/formatPrice.js'
 import { availablePaymentMethods, PAYMENT_METHODS } from '../utils/paymentMethods.js'
-import { formatPhone } from '../utils/phone.js'
+import { localPhone, typePhone } from '../utils/phone.js'
 
 const EMPTY_FORM = {
   customerName: '',
@@ -28,7 +28,7 @@ export default function Checkout() {
   const navigate = useNavigate()
   // Logged in? Start with their name and phone already filled in.
   const [form, setForm] = useState(() =>
-    user ? { ...EMPTY_FORM, customerName: user.fullName, phone: user.phone ? formatPhone(user.phone) : '' } : EMPTY_FORM,
+    user ? { ...EMPTY_FORM, customerName: user.fullName, phone: localPhone(user.phone) } : EMPTY_FORM,
   )
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError] = useState(null)
@@ -92,7 +92,7 @@ export default function Checkout() {
           <h2 className="font-display text-2xl">Contact</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Full name" value={form.customerName} onChange={update('customerName')} error={fieldErrors.customerName} autoComplete="name" className="sm:col-span-2" />
-            <Field label="Phone (we'll call or WhatsApp you)" type="tel" placeholder="e.g. 03 123 456" value={form.phone} onChange={update('phone')} error={fieldErrors.phone} autoComplete="tel" />
+            <Field label="Phone (we'll call or WhatsApp you)" type="tel" placeholder="e.g. 03 123 456" value={form.phone} onChange={(e) => setForm({ ...form, phone: typePhone(e.target.value) })} error={fieldErrors.phone} autoComplete="tel" />
           </div>
 
           <h2 className="mt-10 font-display text-2xl">Delivery address</h2>

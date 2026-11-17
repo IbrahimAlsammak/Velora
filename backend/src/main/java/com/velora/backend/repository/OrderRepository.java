@@ -40,7 +40,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByUserId(Long userId);
 
-    /** Sales report: orders since a moment that have one of these statuses (shipped or delivered). */
+    /** Sales report: orders since a moment that have one of these statuses (delivered). */
     @EntityGraph(attributePaths = "items")
     List<Order> findByCreatedAtGreaterThanEqualAndStatusIn(Instant from, Collection<OrderStatus> statuses);
 
@@ -49,8 +49,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("update Order o set o.user = null where o.user.id = :userId")
     void unlinkOrdersFromUser(@Param("userId") Long userId);
 
-    /** Total money from orders that are shipped or delivered (real sales). */
-    @Query("select coalesce(sum(o.total), 0) from Order o where o.status in (com.velora.backend.entity.OrderStatus.SHIPPED, com.velora.backend.entity.OrderStatus.DELIVERED)")
+    /** Total money from delivered orders (real sales). */
+    @Query("select coalesce(sum(o.total), 0) from Order o where o.status = com.velora.backend.entity.OrderStatus.DELIVERED")
     BigDecimal totalSales();
 
     /** How many orders with this product are in one of these statuses (e.g. not finished yet)? */

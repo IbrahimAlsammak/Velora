@@ -21,7 +21,7 @@ export default function Dashboard() {
             <Stat label="Total orders" value={data.totalOrders} />
             <Stat label="Waiting (pending)" value={data.pendingOrders} highlight={data.pendingOrders > 0}
               link="/admin/orders?status=PENDING" />
-            <Stat label="Sales" value={formatPrice(data.totalSales)} hint="shipped and delivered orders" />
+            <Stat label="Sales" value={formatPrice(data.totalSales)} hint="delivered orders" />
             <Stat label="Pieces in stock" value={data.piecesInStock} hint={`${data.activeProducts} products in shop`} link="/admin/products" />
           </div>
 

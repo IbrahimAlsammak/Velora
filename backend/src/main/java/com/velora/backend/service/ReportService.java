@@ -29,14 +29,14 @@ import com.velora.backend.repository.OrderRepository;
 
 /**
  * The admin "Sales report": sales and orders per day / week / month.
- * Only orders that are SHIPPED or DELIVERED count as sales (pending, confirmed and cancelled don't). Days are counted in the store's time zone (Lebanon).
+ * Only DELIVERED orders count as sales (pending, paid, shipped and cancelled don't). Days are counted in the store's time zone (Lebanon).
  */
 @Service
 @Transactional(readOnly = true)
 public class ReportService {
 
     /** The statuses that count as a real sale. */
-    private static final List<OrderStatus> SOLD = List.of(OrderStatus.SHIPPED, OrderStatus.DELIVERED);
+    private static final List<OrderStatus> SOLD = List.of(OrderStatus.DELIVERED);
 
     private final OrderRepository orderRepository;
     private final ZoneId zone;
