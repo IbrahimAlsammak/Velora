@@ -11,7 +11,7 @@ export default function Register() {
   const location = useLocation()
   const goTo = location.state?.from ?? '/' // home page - or back where they came from (e.g. checkout)
 
-  const [form, setForm] = useState({ fullName: '', phone: '', password: '', confirm: '' })
+  const [form, setForm] = useState({ firstName: '', lastName: '', phone: '', password: '', confirm: '' })
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -24,13 +24,21 @@ export default function Register() {
     e.preventDefault()
     setError(null)
     setFieldErrors({})
+    // First and last name are asked separately, then saved together as one name
+    const missing = {}
+    if (!form.firstName.trim()) missing.firstName = 'Please enter your first name'
+    if (!form.lastName.trim()) missing.lastName = 'Please enter your last name'
+    if (Object.keys(missing).length) {
+      setFieldErrors(missing)
+      return
+    }
     if (form.password !== form.confirm) {
       setFieldErrors({ confirm: "The passwords don't match" })
       return
     }
     setBusy(true)
     try {
-      await register(form.fullName, form.phone, form.password)
+      await register(`${form.firstName.trim()} ${form.lastName.trim()}`, form.phone, form.password)
       navigate(goTo, { replace: true })
     } catch (err) {
       setFieldErrors(err.response?.data?.fields ?? {})
@@ -42,8 +50,12 @@ export default function Register() {
   return (
     <AuthCard title="Create an account" subtitle="Track your orders and check out faster next time.">
       <form onSubmit={handleSubmit} noValidate>
-        <AuthField label="Full name" autoComplete="name" value={form.fullName} onChange={update('fullName')}
-          error={fieldErrors.fullName} />
+        <div className="grid gap-x-4 sm:grid-cols-2">
+          <AuthField label="First name" autoComplete="given-name" value={form.firstName} onChange={update('firstName')}
+            error={fieldErrors.firstName ?? fieldErrors.fullName} />
+          <AuthField label="Last name" autoComplete="family-name" value={form.lastName} onChange={update('lastName')}
+            error={fieldErrors.lastName} />
+        </div>
         <AuthField label="Phone number" type="tel" autoComplete="tel" placeholder="e.g. 03 123 456"
           value={form.phone} onChange={(e) => setForm({ ...form, phone: typePhone(e.target.value) })} error={fieldErrors.phone} />
         <AuthField label="Password (at least 8 characters)" type="password" autoComplete="new-password"
