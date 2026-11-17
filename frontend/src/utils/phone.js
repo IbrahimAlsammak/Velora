@@ -49,9 +49,14 @@ export function typePhone(input) {
     prefix = '+961 '
     digits = digits.slice(3)
   }
-  digits = digits.slice(0, digits.startsWith('0') ? 9 : 8) // a Lebanese number is never longer
-  // first group: "3" (3 123 456), "071" (071 999 999) or two digits (71 / 03)
-  const head = digits.startsWith('3') ? 1 : digits.startsWith('0') && digits.length === 9 ? 3 : 2
+  // After +961 there is no 0: "+961 03 444 555" -> "+961 3 444 555"
+  if (prefix) digits = digits.replace(/^0+/, '')
+  // How long a Lebanese number can be:
+  //   with 0 (03 444 555, 01 234 567)      -> 8 digits
+  //   3 without 0 (3 444 555)              -> 7 digits
+  //   mobile without 0 (71 999 999, 81 ..) -> 8 digits
+  digits = digits.slice(0, digits.startsWith('3') ? 7 : 8)
+  const head = digits.startsWith('3') ? 1 : 2 // first group: "3", or two digits like "71" / "03"
   const parts = [digits.slice(0, head), digits.slice(head, head + 3), digits.slice(head + 3)].filter(Boolean)
   return (prefix + parts.join(' ')).trimEnd() // no space at the end, so Backspace always works
 }
