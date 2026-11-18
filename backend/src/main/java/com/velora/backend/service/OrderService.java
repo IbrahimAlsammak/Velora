@@ -17,7 +17,6 @@ import org.springframework.web.server.ResponseStatusException;
 import com.velora.backend.dto.AdminDtos.ManualItem;
 import com.velora.backend.dto.AdminDtos.ManualOrderForm;
 import com.velora.backend.dto.CreateOrderRequest;
-import com.velora.backend.dto.DeliveryDtos.Quote;
 import com.velora.backend.dto.OrderDto;
 import com.velora.backend.entity.Order;
 import com.velora.backend.entity.OrderItem;
@@ -101,13 +100,10 @@ public class OrderService {
         }
 
         order.setSubtotal(subtotal);
-        // Delivery price: the city's price, or the "other cities" price; free above the store's limit
-        Quote delivery = deliveryService.quote(request.cityId(), subtotal);
-        if (delivery.cityName() != null) {
-            order.setCity(delivery.cityName()); // the exact name from the store's list
-        }
-        order.setShippingCost(delivery.fee());
-        order.setTotal(subtotal.add(delivery.fee()));
+        // Delivery price: the store's one delivery fee (free above the store's limit, if set)
+        BigDecimal delivery = deliveryService.quote(subtotal);
+        order.setShippingCost(delivery);
+        order.setTotal(subtotal.add(delivery));
 
         Order saved = orderRepository.save(order);
         // Tell the owner's phone (Telegram) - sent only once the order is really saved

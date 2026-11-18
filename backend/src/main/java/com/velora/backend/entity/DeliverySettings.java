@@ -23,9 +23,10 @@ public class DeliverySettings {
     @Id
     private Long id = ID;
 
-    /** Price for any city that is NOT in the city list ("Other city"). Empty = $0. */
-    @Column(precision = 10, scale = 2)
-    private BigDecimal otherCitiesFee;
+    /** The delivery fee for every order (all of Lebanon). Empty = $0.
+     *  (Stored in the old "other cities" column, so the price already saved there is kept.) */
+    @Column(name = "other_cities_fee", precision = 10, scale = 2)
+    private BigDecimal fee;
 
     /** Orders of this amount or more get free delivery. Empty = no free delivery. */
     @Column(precision = 10, scale = 2)

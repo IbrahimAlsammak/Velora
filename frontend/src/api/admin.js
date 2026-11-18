@@ -56,9 +56,5 @@ export const saveSlides = (slides) => data(api.put('/admin/store/slides', { slid
 // Maintenance: true = close the shop ("back soon" page), false = open it again
 export const setMaintenance = (maintenance) => data(api.put('/admin/store/maintenance', { maintenance }))
 
-// Delivery fees (per city)
-export const updateDelivery = (otherCitiesFee, freeDeliveryOver) =>
-  data(api.put('/admin/delivery', { otherCitiesFee, freeDeliveryOver }))
-export const addDeliveryCity = (city) => data(api.post('/admin/delivery/cities', city))
-export const updateDeliveryCity = (id, city) => data(api.put(`/admin/delivery/cities/${id}`, city))
-export const deleteDeliveryCity = (id) => api.delete(`/admin/delivery/cities/${id}`)
+// Delivery fee (one for all of Lebanon) + free-delivery amount
+export const updateDelivery = (fee, freeDeliveryOver) => data(api.put('/admin/delivery', { fee, freeDeliveryOver }))

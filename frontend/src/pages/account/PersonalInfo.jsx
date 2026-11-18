@@ -7,7 +7,7 @@ import { localPhone, typePhone } from '../../utils/phone.js'
 
 /** "Sara Al Khoury" -> { first: 'Sara', last: 'Al Khoury' } (the name is saved as one, shown as two boxes) */
 function splitName(fullName) {
-  const [first = '', ...rest] = (fullName ?? '').trim().split(/s+/)
+  const [first = '', ...rest] = (fullName ?? '').trim().split(/\s+/)
   return { first, last: rest.join(' ') }
 }
 
@@ -70,7 +70,7 @@ function DetailsForm() {
         <AuthField label="Phone number" type="tel" autoComplete="tel" placeholder="e.g. 03 123 456"
           value={phone} error={fieldErrors.phone} onChange={(e) => setPhone(typePhone(e.target.value))} />
         <p className="-mt-2 mb-6 text-xs text-mulberry/60">
-          You log in with this number, and we call or WhatsApp you on it about your orders.
+          You log in with this number, and we WhatsApp you on it about your orders.
         </p>
 
         {message && <p className={`mb-4 text-sm ${message.ok ? 'text-green-800' : 'text-red-700'}`}>{message.text}</p>}

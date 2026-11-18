@@ -4,7 +4,7 @@
  */
 export const STORE = {
   // Contact (shown in the footer)
-  email: 'Bobosamak57@gmail.com',          // e.g. 'hello@velora.com'
+  email: 'veloramodest99@gmail.com',          // e.g. 'hello@velora.com'
   phone: '+961 76 569 913',          // e.g. '+961 3 123 456'
 
   // WhatsApp number for the Contact page, with country code, e.g. '+961 3 123 456'

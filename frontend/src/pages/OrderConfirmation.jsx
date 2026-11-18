@@ -5,7 +5,7 @@ import WhishInstructions from '../components/WhishInstructions.jsx'
 import { STORE } from '../config/store.js'
 import formatPrice from '../utils/formatPrice.js'
 import { paymentLabel } from '../utils/paymentMethods.js'
-import { formatPhone, whatsappUrl } from '../utils/phone.js'
+import { whatsappUrl } from '../utils/phone.js'
 import { placeLabel } from '../utils/regions.js'
 
 export default function OrderConfirmation() {
@@ -38,7 +38,7 @@ export default function OrderConfirmation() {
       <div className="text-center">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-mulberry text-2xl text-cream">✓</div>
         <h1 className="mt-6 font-display text-4xl md:text-5xl font-semibold">Thank you, {order.customerName.split(' ')[0]}!</h1>
-        <p className="mt-3 text-mulberry/70">Your order has been received. We&apos;ll call or WhatsApp you on {formatPhone(order.phone)} to confirm it.</p>
+        <p className="mt-3 text-mulberry/70">Your order has been received.</p>
         <p className="mt-6 inline-block rounded-full border border-gold px-6 py-2 tracking-[0.2em]">{order.orderNumber}</p>
         <p className="mt-2 text-xs uppercase tracking-wider text-mulberry/60">Keep this order number</p>
       </div>

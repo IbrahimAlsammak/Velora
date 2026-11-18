@@ -21,9 +21,8 @@ import jakarta.validation.constraints.Size;
 public record CreateOrderRequest(
         @NotBlank(message = "Please enter your full name") @Size(max = 120) String customerName,
         @NotBlank(message = "Please enter your phone number") @Size(max = 30) String phone, // checked in OrderService
-        Region region, // older orders only - delivery now works by city
+        Region region, // older orders only
         @NotBlank(message = "Please enter your city or town") @Size(max = 100) String city,
-        Long cityId, // a city from the store's delivery list (empty = "Other city" -> "other cities" price)
         @NotBlank(message = "Please enter your street or neighbourhood") @Size(max = 250) String addressLine,
         @Size(max = 120) String building,
         @Size(max = 30) String floor,

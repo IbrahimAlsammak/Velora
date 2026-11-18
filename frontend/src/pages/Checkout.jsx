@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { getDelivery } from '../api/catalog.js'
-import CityPicker from '../components/CityPicker.jsx'
 import { placeOrder } from '../api/orders.js'
 import { useAuth } from '../context/useAuth.js'
 import { useCart } from '../context/useCart.js'
@@ -33,21 +32,17 @@ export default function Checkout() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
-  const { data: delivery } = useLoad(getDelivery) // delivery prices set in the admin panel
+  const { data: delivery } = useLoad(getDelivery) // the delivery fee set in the admin panel
 
   // Nothing to buy -> send them back to the bag
   if (items.length === 0 && !submitting) return <Navigate to="/cart" replace />
 
   const update = (field) => (e) => setForm({ ...form, [field]: e.target.value })
 
-  // ----- Delivery price (shown here; the backend calculates the real one) -----
-  const cities = delivery?.cities ?? []
-  const typed = form.city.trim().toLowerCase()
-  const chosenCity = cities.find((c) => c.name.toLowerCase() === typed) // undefined = a city that's not in the list
-  const otherFee = Number(delivery?.otherCitiesFee ?? 0)
+  // ----- Delivery price: one fee for all of Lebanon (shown here; the backend calculates the real one) -----
   const freeOver = delivery?.freeDeliveryOver != null ? Number(delivery.freeDeliveryOver) : null
   const isFree = freeOver != null && subtotal >= freeOver
-  const deliveryFee = !typed ? null : isFree ? 0 : chosenCity ? Number(chosenCity.fee) : otherFee
+  const deliveryFee = !delivery ? null : isFree ? 0 : Number(delivery.fee ?? 0)
 
   async function handleSubmit(e) {
     e.preventDefault() // stop the browser reloading the page
@@ -58,7 +53,6 @@ export default function Checkout() {
       // Only IDs, options and quantities are sent - the backend works out the prices itself
       const order = await placeOrder({
         ...form,
-        cityId: chosenCity ? chosenCity.id : null, // null = "other city" -> the "other cities" price
         items: items.map((i) => ({ productId: i.productId, color: i.color, size: i.size, quantity: i.quantity })),
       })
       navigate(`/order/${order.orderNumber}`, { replace: true })
@@ -92,18 +86,17 @@ export default function Checkout() {
           <h2 className="font-display text-2xl">Contact</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Full name" value={form.customerName} onChange={update('customerName')} error={fieldErrors.customerName} autoComplete="name" className="sm:col-span-2" />
-            <Field label="Phone (we'll call or WhatsApp you)" type="tel" placeholder="e.g. 03 123 456" value={form.phone} onChange={(e) => setForm({ ...form, phone: typePhone(e.target.value) })} error={fieldErrors.phone} autoComplete="tel" />
+            <Field label="Phone (we'll WhatsApp you)"type="tel" placeholder="e.g. 03 123 456" value={form.phone} onChange={(e) => setForm({ ...form, phone: typePhone(e.target.value) })} error={fieldErrors.phone} autoComplete="tel" />
           </div>
 
           <h2 className="mt-10 font-display text-2xl">Delivery address</h2>
           <p className="mt-1 text-sm text-mulberry/60">
-            We deliver all over Lebanon.
+            We deliver all over Lebanon{deliveryFee > 0 && <> for {formatPrice(delivery.fee)}</>}.
             {freeOver != null && <> Free delivery on orders of {formatPrice(freeOver)} or more.</>}
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {/* City: type to search the store's list - each city shows its delivery price */}
-            <CityPicker cities={cities} otherFee={otherFee} value={form.city} error={fieldErrors.city}
-              onChange={(city) => setForm({ ...form, city })} className="sm:col-span-2" />
+            <Field label="City / town" placeholder="e.g. Jounieh" value={form.city} onChange={update('city')}
+              error={fieldErrors.city} autoComplete="address-level2" className="sm:col-span-2" />
             <Field label="Street" value={form.addressLine} onChange={update('addressLine')} error={fieldErrors.addressLine} autoComplete="address-line1" className="sm:col-span-2" />
             <Field label="Building (optional)" placeholder="Name or number" value={form.building} onChange={update('building')} error={fieldErrors.building} />
             <Field label="Floor (optional)" placeholder="e.g. 3rd floor" value={form.floor} onChange={update('floor')} error={fieldErrors.floor} />
@@ -156,7 +149,7 @@ export default function Checkout() {
             <div className="flex justify-between"><dt>Subtotal</dt><dd>{formatPrice(subtotal)}</dd></div>
             <div className="flex justify-between">
               <dt>Delivery</dt>
-              <dd>{deliveryFee == null ? <span className="text-mulberry/50">choose your city</span> : deliveryFee === 0 ? 'Free' : formatPrice(deliveryFee)}</dd>
+              <dd>{deliveryFee == null ? <span className="text-mulberry/50">…</span> : deliveryFee === 0 ? 'Free' : formatPrice(deliveryFee)}</dd>
             </div>
           </dl>
           <div className="mt-4 flex justify-between border-t border-gold-light pt-4 text-lg font-medium">
