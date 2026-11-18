@@ -1,7 +1,7 @@
 # Caddy web server settings.
 # SITE_ADDRESS comes from the .env file:
 #   on your laptop:  :80                                    -> http://localhost
-#   on the server:   modestbyvelora.com, www.modestbyvelora.com  -> https with a free certificate
+#   on the server:   veloramodest.com, www.veloramodest.com  -> https with a free certificate
 {$SITE_ADDRESS::80} {
 	encode zstd gzip
 
