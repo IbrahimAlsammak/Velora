@@ -12,7 +12,7 @@ export const STORE = {
   whatsapp: '+961 76 569 913',
 
   // Social media - paste the full link to your page
-  instagram: 'https://instagram.com/de__haus',      // e.g. 'https://instagram.com/velora'
+  instagram: 'https://instagram.com/velora__modest',      // e.g. 'https://instagram.com/velora'
   tiktok: '',         // e.g. 'https://tiktok.com/@velora'
   facebook: '',
 
