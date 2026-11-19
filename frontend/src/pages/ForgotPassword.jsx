@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import AuthCard from '../components/AuthCard.jsx'
 import { STORE } from '../config/store.js'
-import { callUrl, whatsappUrl } from '../utils/phone.js'
+import { whatsappUrl } from '../utils/phone.js'
 
 /**
  * "Forgot password?" - the customer messages the store, and the admin
@@ -17,11 +17,6 @@ export default function ForgotPassword() {
         <a href={`${whatsappUrl(STORE.whatsapp)}?text=${message}`} target="_blank" rel="noreferrer"
           className="block rounded-full bg-mulberry py-3.5 text-center text-sm uppercase tracking-[0.2em] text-cream hover:bg-gold">
           Message us on WhatsApp
-        </a>
-      ) : STORE.phone ? (
-        <a href={callUrl(STORE.phone)}
-          className="block rounded-full bg-mulberry py-3.5 text-center text-sm uppercase tracking-[0.2em] text-cream hover:bg-gold">
-          Call us: {STORE.phone}
         </a>
       ) : (
         <Link to="/contact"
