@@ -14,8 +14,9 @@ export default function Navbar() {
     <header className="border-b border-gold-light/60 bg-cream">
       <nav className="mx-auto max-w-6xl flex items-center justify-between gap-3 px-4 py-3">
         <div className="flex min-w-0 items-center gap-4 lg:gap-6">
-          <Link to="/" className="shrink-0">
-            <img src={logo} alt="Velora" className="h-10 sm:h-12" />
+          <Link to="/" className="min-w-0">
+            {/* If the menu needs the room (small phones), the logo shrinks instead of sliding under it */}
+            <img src={logo} alt="Velora" className="h-9 w-auto max-w-full object-contain object-left sm:h-12" />
           </Link>
           {/* Logged in -> a small greeting next to the logo (hidden on phones, there isn't room) */}
           {user && (
@@ -25,8 +26,8 @@ export default function Navbar() {
             </Link>
           )}
         </div>
-        {/* Smaller gaps on phones so everything fits on one line */}
-        <ul className="flex items-center gap-3 text-xs tracking-wider uppercase sm:gap-6 sm:text-sm">
+        {/* Smaller gaps on phones + no wrapping, so every link (e.g. "Log in") stays on one line */}
+        <ul className="flex shrink-0 items-center gap-2.5 whitespace-nowrap text-xs tracking-wider uppercase min-[400px]:gap-3 sm:gap-6 sm:text-sm">
           {/* On phones the logo already links home, so "Home" is hidden there */}
           <li className="hidden sm:block"><NavLink to="/" end className={linkClass}>Home</NavLink></li>
           <li><NavLink to="/shop" className={linkClass}>Shop</NavLink></li>
@@ -34,12 +35,13 @@ export default function Navbar() {
           {/* Only visible to a logged-in admin - customers never see this link */}
           {isAdmin && (
             <li>
-              <Link to="/admin" className="rounded-full border border-gold px-3 py-1 text-gold hover:bg-gold hover:text-cream">
+              <Link to="/admin" className="rounded-full border border-gold px-2 py-1 text-gold sm:px-3 hover:bg-gold hover:text-cream">
                 Admin
               </Link>
             </li>
           )}
-          <li>
+          {/* On phones an admin has the Admin button instead, so "Account" is hidden there to keep room for the logo */}
+          <li className={isAdmin ? 'hidden sm:block' : undefined}>
             <NavLink to={user ? '/account' : '/login'} className={linkClass}>
               {user ? 'Account' : 'Log in'}
             </NavLink>
