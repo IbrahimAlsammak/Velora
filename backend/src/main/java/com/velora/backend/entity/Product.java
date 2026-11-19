@@ -111,6 +111,15 @@ public class Product {
     @Column(name = "size", length = 20)
     private List<String> sizes = new ArrayList<>();
 
+    /**
+     * The size guide in cm, e.g. Length/M = 140, Chest/M = 100 -> stored in the table "product_measurements".
+     * Empty = no size guide shown.
+     */
+    @ElementCollection
+    @CollectionTable(name = "product_measurements", joinColumns = @JoinColumn(name = "product_id"))
+    @OrderColumn(name = "position")
+    private List<SizeMeasurement> measurements = new ArrayList<>();
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 

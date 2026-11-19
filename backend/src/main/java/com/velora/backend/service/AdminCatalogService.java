@@ -16,6 +16,7 @@ import com.velora.backend.entity.Category;
 import com.velora.backend.entity.OrderStatus;
 import com.velora.backend.entity.Product;
 import com.velora.backend.entity.ProductColor;
+import com.velora.backend.entity.SizeMeasurement;
 import com.velora.backend.entity.VariantStock;
 import com.velora.backend.repository.CategoryRepository;
 import com.velora.backend.repository.OrderRepository;
@@ -118,6 +119,18 @@ public class AdminCatalogService {
             p.recountStock(); // total = sum of all combinations
         } else {
             p.setStock(form.stock());
+        }
+
+        // Size guide in cm: keep only filled-in numbers of sizes the product really has
+        p.getMeasurements().clear();
+        if (form.measurements() != null) {
+            List<String> sizes = p.getSizes().isEmpty() ? java.util.Collections.singletonList(null) : p.getSizes();
+            for (var m : form.measurements()) {
+                String size = blankToNull(m.size() == null ? null : m.size().trim());
+                String cm = m.cm() == null ? "" : m.cm().trim();
+                if (cm.isEmpty() || !sizes.contains(size)) continue;
+                p.getMeasurements().add(new SizeMeasurement(m.name().trim(), size, cm));
+            }
         }
     }
 

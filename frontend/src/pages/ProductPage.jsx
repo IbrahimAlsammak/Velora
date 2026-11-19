@@ -167,6 +167,7 @@ function ProductDetails({ product, related }) {
                 })}
               </div>
             )}
+            <SizeGuide product={product} selectedSize={size} />
           </div>
 
           {/* Quantity + Add to bag */}
@@ -204,6 +205,57 @@ function ProductDetails({ product, related }) {
         </div>
       )}
     </section>
+  )
+}
+
+/**
+ * "Size guide (cm)" - a button that opens a table: one row per measurement (Length, Chest...),
+ * one column per size. The size the customer picked is highlighted.
+ */
+function SizeGuide({ product, selectedSize }) {
+  const [open, setOpen] = useState(false)
+  const rows = product.measurements ?? []
+  if (rows.length === 0) return null
+
+  const names = [...new Set(rows.map((m) => m.name))]
+  const sizes = product.sizes.length ? product.sizes : [null]
+  const valueOf = (name, size) => rows.find((m) => m.name === name && (m.size ?? null) === size)?.cm
+
+  return (
+    <div className="mt-4">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
+        className="text-sm text-gold underline underline-offset-4 hover:text-mulberry">
+        {open ? 'Hide size guide' : 'Size guide (cm)'}
+      </button>
+      {open && (
+        <div className="mt-3 overflow-x-auto rounded-xl border border-gold-light bg-white/60">
+          <table className="w-full text-center text-sm">
+            <thead>
+              <tr className="border-b border-gold-light">
+                <th className="px-3 py-2 text-left font-medium">cm</th>
+                {sizes.map((sz) => (
+                  <th key={sz ?? 'one'} className={`px-3 py-2 font-medium ${sz && sz === selectedSize ? 'bg-mulberry text-cream' : ''}`}>
+                    {sz ?? 'One size'}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {names.map((name) => (
+                <tr key={name} className="border-b border-gold-light/50 last:border-0">
+                  <td className="px-3 py-2 text-left">{name}</td>
+                  {sizes.map((sz) => (
+                    <td key={sz ?? 'one'} className={`px-3 py-2 ${sz && sz === selectedSize ? 'bg-mulberry/10 font-medium' : ''}`}>
+                      {valueOf(name, sz) ?? '–'}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   )
 }
 

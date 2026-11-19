@@ -104,14 +104,16 @@ public final class AdminDtos {
                                int stock, boolean active, boolean featured, String imageUrl, List<String> images,
                                Long categoryId, String categoryName,
                                List<ProductDetailDto.ColorDto> colors, List<String> sizes,
-                               List<ProductDetailDto.VariantDto> variants) {
+                               List<ProductDetailDto.VariantDto> variants,
+                               List<ProductDetailDto.MeasurementDto> measurements) {
         public static AdminProduct from(Product p) {
             return new AdminProduct(p.getId(), p.getName(), p.getSlug(), p.getDescription(), p.getPrice(),
                     p.getStock(), p.isActive(), p.isFeatured(), p.getImageUrl(), p.getAllImages(),
                     p.getCategory().getId(), p.getCategory().getName(),
                     p.getColors().stream().map(c -> new ProductDetailDto.ColorDto(c.getName(), c.getHex())).toList(),
                     List.copyOf(p.getSizes()),
-                    ProductDetailDto.variantsOf(p));
+                    ProductDetailDto.variantsOf(p),
+                    ProductDetailDto.measurementsOf(p));
         }
     }
 
@@ -129,7 +131,15 @@ public final class AdminDtos {
             @Size(max = 20) List<@Valid ColorForm> colors,
             @Size(max = 20) List<@NotBlank @Size(max = 20) String> sizes,
             // stock per colour + size (only used when the product has colours or sizes)
-            @Size(max = 400) List<@Valid VariantForm> variants) {}
+            @Size(max = 400) List<@Valid VariantForm> variants,
+            // the size guide in cm (empty = no size guide)
+            @Size(max = 400) List<@Valid MeasurementForm> measurements) {}
+
+    /** One number of the size guide, e.g. Length / M = "140". Empty cm = not filled in (skipped). */
+    public record MeasurementForm(
+            @NotBlank(message = "Every measurement needs a name") @Size(max = 40) String name,
+            @Size(max = 20) String size,
+            @Size(max = 20, message = "Keep each number short, e.g. 140 or 140-142") String cm) {}
 
     /** Stock of one colour + size, typed in the admin product form. */
     public record VariantForm(

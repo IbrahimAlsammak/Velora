@@ -23,9 +23,17 @@ public record ProductDetailDto(
         String categorySlug,
         List<ColorDto> colors,
         List<String> sizes,
-        List<VariantDto> variants) {
+        List<VariantDto> variants,
+        List<MeasurementDto> measurements) { // the size guide in cm (empty = none)
 
     public record ColorDto(String name, String hex) {}
+
+    /** One number of the size guide, e.g. Length / M -> "140" (cm). size is null for "One size". */
+    public record MeasurementDto(String name, String size, String cm) {}
+
+    public static List<MeasurementDto> measurementsOf(Product p) {
+        return p.getMeasurements().stream().map(m -> new MeasurementDto(m.getMeasurement(), m.getSize(), m.getCm())).toList();
+    }
 
     /** Stock of one colour + size, e.g. Black / M -> 3. */
     public record VariantDto(String color, String size, int stock) {}
@@ -48,6 +56,7 @@ public record ProductDetailDto(
                 p.getCategory().getSlug(),
                 p.getColors().stream().map(c -> new ColorDto(c.getName(), c.getHex())).toList(),
                 List.copyOf(p.getSizes()),
-                variantsOf(p));
+                variantsOf(p),
+                measurementsOf(p));
     }
 }

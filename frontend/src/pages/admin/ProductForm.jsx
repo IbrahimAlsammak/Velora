@@ -14,9 +14,12 @@ const MAX_PHOTOS = 10
 
 const COMMON_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
 
+/** Quick buttons for the size guide - you can also type any other name. */
+const COMMON_MEASUREMENTS = ['Length', 'Chest', 'Waist', 'Hips', 'Shoulder', 'Sleeve']
+
 const EMPTY_PRODUCT = {
   name: '', description: '', price: '', stock: 0, categoryId: '', active: true, featured: false,
-  images: [], colors: [], sizes: [], variants: [],
+  images: [], colors: [], sizes: [], variants: [], measurements: [],
 }
 
 /** Key of one colour + size in the stock grid, e.g. "Black|M" ("" = no colour / no size). */
@@ -53,6 +56,11 @@ function Editor({ initial, id, categories }) {
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [customSize, setCustomSize] = useState('')
+  // Size guide in cm: the measurement names in order (e.g. Length, Chest) + the numbers { "Length|M": "140", ... }
+  const [measureNames, setMeasureNames] = useState(() => [...new Set((initial.measurements ?? []).map((m) => m.name))])
+  const [measureCells, setMeasureCells] = useState(() =>
+    Object.fromEntries((initial.measurements ?? []).map((m) => [cellKey(m.name, m.size), m.cm])))
+  const [customMeasure, setCustomMeasure] = useState('')
 
   const set = (field, value) => setForm((f) => ({ ...f, [field]: value }))
 
@@ -112,6 +120,14 @@ function Editor({ initial, id, categories }) {
     setCustomSize('')
   }
 
+  // ---------- Size guide (cm) ----------
+  function addMeasure(name) {
+    const n = name.trim()
+    if (n && !measureNames.some((m) => m.toLowerCase() === n.toLowerCase())) setMeasureNames((list) => [...list, n])
+  }
+  const removeMeasure = (name) => setMeasureNames((list) => list.filter((m) => m !== name))
+  const setMeasureCell = (name, size, value) => setMeasureCells((c) => ({ ...c, [cellKey(name, size)]: value }))
+
   // ---------- Stock per colour + size ----------
   const hasOptions = form.colors.length > 0 || form.sizes.length > 0
   const gridColors = form.colors.length ? form.colors.map((c) => c.name.trim()) : [null] // one row if no colours
@@ -134,6 +150,10 @@ function Editor({ initial, id, categories }) {
         ? gridColors.flatMap((c) => gridSizes.map((sz) => ({ color: c, size: sz, stock: Number(cellValue(c, sz)) || 0 })))
         : [],
       categoryId: form.categoryId === '' ? null : Number(form.categoryId),
+      // only the boxes you filled in are saved
+      measurements: measureNames.flatMap((name) => gridSizes
+        .map((sz) => ({ name, size: sz, cm: String(measureCells[cellKey(name, sz)] ?? '').trim() }))
+        .filter((m) => m.cm !== '')),
     }
     try {
       if (id) await updateProduct(id, body)
@@ -251,6 +271,63 @@ function Editor({ initial, id, categories }) {
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomSize() } }} />
               <Button variant="secondary" onClick={addCustomSize}>Add</Button>
             </div>
+          </Card>
+
+          {/* Size guide in cm - shown to customers on the product page */}
+          <Card>
+            <h2 className="font-display text-xl">Size guide (cm)</h2>
+            <p className="text-xs text-mulberry/50">
+              Optional. Add what you measure (e.g. Length, Chest), then type the cm for each size.
+              Customers see this table on the product page. Empty = no size guide.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {COMMON_MEASUREMENTS.filter((m) => !measureNames.some((n) => n.toLowerCase() === m.toLowerCase())).map((m) => (
+                <button key={m} type="button" onClick={() => addMeasure(m)}
+                  className="rounded-full border border-gold-light px-4 py-1.5 text-sm hover:border-gold">
+                  + {m}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 flex max-w-xs gap-2">
+              <input className={inputClass} placeholder="Other, e.g. Hijab width" value={customMeasure} maxLength={40}
+                onChange={(e) => setCustomMeasure(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMeasure(customMeasure); setCustomMeasure('') } }} />
+              <Button variant="secondary" onClick={() => { addMeasure(customMeasure); setCustomMeasure('') }}>Add</Button>
+            </div>
+            {measureNames.length > 0 && (
+              <div className="mt-4 overflow-x-auto">
+                <table className="text-sm">
+                  <thead>
+                    <tr>
+                      <th />
+                      {gridSizes.map((sz) => <th key={sz ?? 'one'} className="px-1 pb-1 text-center font-medium">{sz ?? 'One size'}</th>)}
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {measureNames.map((name) => (
+                      <tr key={name}>
+                        <td className="whitespace-nowrap py-1 pr-3">{name}</td>
+                        {gridSizes.map((sz) => (
+                          <td key={sz ?? 'one'} className="px-1 py-1">
+                            <input inputMode="decimal" maxLength={20} placeholder="cm" aria-label={`${name} ${sz ?? 'one size'} in cm`}
+                              value={measureCells[cellKey(name, sz)] ?? ''} onChange={(e) => setMeasureCell(name, sz, e.target.value)}
+                              className={`${inputClass} w-20 text-center`} />
+                          </td>
+                        ))}
+                        <td className="pl-1">
+                          <button type="button" onClick={() => removeMeasure(name)} aria-label={`Remove ${name}`}
+                            className="px-2 text-xl text-mulberry/50 hover:text-red-700">×</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {Object.keys(fieldErrors).some((k) => k.startsWith('measurements')) && (
+              <p className="mt-2 text-sm text-red-700">Check the size guide - keep each number short, e.g. 140 or 140-142.</p>
+            )}
           </Card>
 
           {/* Stock per colour + size */}
