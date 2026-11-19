@@ -213,7 +213,13 @@ public class OrderService {
         }
         text.append("\nDelivery: $").append(o.getShippingCost());
         text.append("\n💰 Total: $").append(o.getTotal());
-        text.append("\n💳 ").append(o.getPaymentMethod() == PaymentMethod.WHISH_TRANSFER ? "Whish transfer" : "Cash on delivery");
+        if (o.getPaymentMethod() == PaymentMethod.WHISH_TRANSFER) {
+            // Whish = only the products; the driver collects the delivery fee in cash
+            text.append("\n💳 Whish transfer: $").append(o.getSubtotal())
+                .append(" + delivery $").append(o.getShippingCost()).append(" in cash");
+        } else {
+            text.append("\n💳 Cash on delivery");
+        }
         if (o.getNotes() != null) {
             text.append("\n📝 ").append(o.getNotes());
         }

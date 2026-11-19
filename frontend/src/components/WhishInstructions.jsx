@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { STORE } from '../config/store.js'
 import formatPrice from '../utils/formatPrice.js'
 
-/** "Send $X to our Whish number with your order number in the note" - shown after ordering. */
-export default function WhishInstructions({ amount, orderNumber }) {
+/**
+ * "Send $X to our Whish number with your order number in the note" - shown after ordering.
+ * amount = the products only; the delivery fee is paid in cash to the delivery person.
+ */
+export default function WhishInstructions({ amount, delivery, orderNumber }) {
   return (
     <div className="rounded-2xl border-2 border-gold bg-white/80 p-6 text-left">
       <p className="text-xs uppercase tracking-[0.25em] text-gold">Next step: pay with Whish</p>
@@ -19,7 +22,12 @@ export default function WhishInstructions({ amount, orderNumber }) {
           In the note, write your order number:
           <CopyLine value={orderNumber} />
         </Step>
-        <Step n="3">
+        {Number(delivery) > 0 && (
+          <Step n="3">
+            The delivery fee (<strong>{formatPrice(delivery)}</strong>) is paid <strong>in cash</strong> to the delivery person.
+          </Step>
+        )}
+        <Step n={Number(delivery) > 0 ? '4' : '3'}>
           That&apos;s it. We&apos;ll confirm your order as soon as we receive the payment.
         </Step>
       </ol>

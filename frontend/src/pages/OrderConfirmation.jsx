@@ -61,7 +61,7 @@ export default function OrderConfirmation() {
       {/* Whish transfer, not paid yet -> show how to pay */}
       {order.paymentMethod === 'WHISH_TRANSFER' && order.status === 'PENDING' && STORE.whishNumber && (
         <div className="mt-10">
-          <WhishInstructions amount={order.total} orderNumber={order.orderNumber} />
+          <WhishInstructions amount={order.subtotal} delivery={order.shippingCost} orderNumber={order.orderNumber} />
         </div>
       )}
 

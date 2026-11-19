@@ -8,7 +8,7 @@ export const PAYMENT_METHODS = {
   },
   WHISH_TRANSFER: {
     label: 'Whish transfer',
-    description: 'Send the amount from your Whish app. We confirm your order once it arrives.',
+    description: 'Send the price of your products from your Whish app - the delivery fee is paid in cash to the delivery person.',
   },
 }
 

@@ -129,8 +129,13 @@ export default function OrderDetail() {
         <strong>{paymentLabel(order.paymentMethod)}</strong>
         {order.paymentMethod === 'WHISH_TRANSFER' && order.status === 'PENDING' && (
           <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2">
-            Check your Whish app for <strong>{formatPrice(order.total)}</strong> with the note{' '}
+            Check your Whish app for <strong>{formatPrice(order.subtotal)}</strong> (the products) with the note{' '}
             <strong>{order.orderNumber}</strong>. When it&apos;s there, click &quot;Whish payment received&quot;.
+          </p>
+        )}
+        {order.paymentMethod === 'WHISH_TRANSFER' && Number(order.shippingCost) > 0 && order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
+          <p className="mt-2 text-mulberry/70">
+            The delivery person collects the delivery fee <strong>{formatPrice(order.shippingCost)}</strong> in cash.
           </p>
         )}
         {order.paymentMethod === 'CASH_ON_DELIVERY' && order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
